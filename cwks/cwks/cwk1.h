@@ -4,5 +4,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
+#include "opengl.h"
 
-void cwk1_main();
+int cwk1_main();
