@@ -67,5 +67,17 @@
     <None Include="tutorial3.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="tutorial4.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tutorial4.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tutorial4.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tri.geom">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
