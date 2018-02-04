@@ -61,5 +61,11 @@
     <None Include="tut2.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="tutorial3.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tutorial3.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

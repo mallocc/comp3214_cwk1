@@ -171,6 +171,8 @@
   <ItemGroup>
     <None Include="tut2.frag" />
     <None Include="tut2.vert" />
+    <None Include="tutorial3.frag" />
+    <None Include="tutorial3.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

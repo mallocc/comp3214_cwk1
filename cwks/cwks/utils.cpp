@@ -149,5 +149,3 @@ char* filetobuf(char *file) { /* A simple function that will read a file into an
     buf[length] = 0; /* Null terminator */
     return buf; /* Return the buffer */
 }
-
-

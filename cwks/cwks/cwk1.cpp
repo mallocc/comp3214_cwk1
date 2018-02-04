@@ -1,98 +1,120 @@
 #include "cwk1.h"
 
-#include "utils.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-GLuint vbo[2]; /* Create handles for two Vertex Buffer Objects */
-GLuint vao; /* Create handles for one Vertex Array Object */
-const GLfloat diamond[4][2] = {  /* We're going to create a simple diamond made from lines */
-	{ 0.0,  0.5 },  /* Top point    */
-	{ 0.5,  0.0 },  /* Right point  */
-	{ 0.0, -0.5 },  /* Bottom point */
-	{ -0.5,  0.0 }
-}; /* Left point   */
-const GLfloat colors[4][3] = {
-	{ 1.0,  0.0,  0.0 },  /* Red   */
-	{ 0.0,  1.0,  0.0 },  /* Green */
-	{ 0.0,  0.0,  1.0 },  /* Blue  */
-	{ 0.0,  1.0,  1.0 }
-}; /* White */
-GLchar *vertexsource, *fragmentsource; /* These pointers will receive the contents of our shader source code files */
-GLuint vertexshader, fragmentshader; /* These are handles used to reference the shaders */
-GLuint shaderprogram; /* This is a handle to the shader program */
+struct Vertex {
+	GLdouble position[3];
+	GLfloat color[3];
+};
+/* These pointers will receive the contents of our shader source code files */
+GLchar *vertexsource, *fragmentsource;
+/* These are handles used to reference the shaders */
+GLuint vertexshader, fragmentshader;
+/* This is a handle to the shader program */
+GLuint shaderprogram;
+GLuint vao, vbo[1]; /* Create handles for our Vertex Array Object and One Vertex Buffer Object */
 
-
-void SetupShaders(void) 
-{
-	char text[1000];
-	int length;
-	fprintf(stderr, "Setting up shaders\n"); /* Allocate and assign two Vertex Buffer Objects to our handle */
-	vertexsource = filetobuf("./tut2.vert"); /* Read our shaders into the appropriate buffers */
-	fragmentsource = filetobuf("./tut2.frag");
-	if (vertexsource && fragmentsource) {
-		printf("Shader Code loaded\n");
-	}
-	else {
-		printf("Shader files not found\n");
-	}
-	vertexshader = glCreateShader(GL_VERTEX_SHADER); /* Assign our handles a "name" to new shader objects */
-	fragmentshader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(vertexshader, 1, (const GLchar**)&vertexsource, 0); /* Associate the source code buffers with each handle */
-	glShaderSource(fragmentshader, 1, (const GLchar**)&fragmentsource, 0);
-	glCompileShader(fragmentshader);/* Compile our shader objects */
-	glCompileShader(vertexshader);
-	shaderprogram = glCreateProgram();/* Assign our program handle a "name" */
-	glAttachShader(shaderprogram, vertexshader); /* Attach our shaders to our program */
-	glAttachShader(shaderprogram, fragmentshader);
-	glLinkProgram(shaderprogram); /* Link our program */
-	glGetProgramInfoLog(shaderprogram, 1000, &length, text); // Check for errors
-	if (length > 0) {
-		fprintf(stderr, "Validate Shader Program\n%s\n", text);
-		fprintf(stderr, "\n%s\n", text);
-	}
-	glUseProgram(shaderprogram); /* Set it as being actively used */
-	printf("All Compiled\n");
-}
-void SetupGeometry(void) 
-{
-	fprintf(stderr, "Set up vertices\n");
+void SetupGeometry() {
+	/* An array of 12 Vertices to make 4 coloured triangles in the shape of a tetrahedron*/
+	const struct Vertex tetrahedron[12] = {
+		{ { 1.0,  1.0,  1.0 },{ 1.0f,  0.0f,  0.0f } },
+		{ { -1.0, -1.0,  1.0 },{ 1.0f,  0.0f,  0.0f } },
+		{ { -1.0,  1.0, -1.0 },{ 1.0f,  0.0f,  0.0f } },
+		{ { 1.0,  1.0,  1.0 },{ 0.0f,  1.0f,  0.0f } },
+		{ { -1.0, -1.0,  1.0 },{ 0.0f,  1.0f,  0.0f } },
+		{ { 1.0, -1.0, -1.0 },{ 0.0f,  1.0f,  0.0f } },
+		{ { 1.0,  1.0,  1.0 },{ 0.0f,  0.0f,  1.0f } },
+		{ { -1.0,  1.0, -1.0 },{ 0.0f,  0.0f,  1.0f } },
+		{ { 1.0, -1.0, -1.0 },{ 0.0f,  0.0f,  1.0f } },
+		{ { -1.0, -1.0,  1.0 },{ 1.0f,  1.0f,  1.0f } },
+		{ { -1.0,  1.0, -1.0 },{ 1.0f,  1.0f,  1.0f } },
+		{ { 1.0, -1.0, -1.0 },{ 1.0f,  1.0f,  1.0f } }
+	};
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-	fprintf(stderr, "vao %d\n", vao);
-	glGenBuffers(2, vbo);
+	/* Allocate and assign One Vertex Buffer Object to our handle */
+	glGenBuffers(1, vbo);
+	/* Bind our VBO as being the active buffer and storing vertex attributes (coordinates + colors) */
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	/* Copy the vertex data from tetrahedron to our buffer */
+	/* 12 * sizeof(GLfloat) is the size of the tetrahedrom array, since it contains 12 Vertex values */
+	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(struct Vertex), tetrahedron, GL_STATIC_DRAW);
+	/* Specify that our coordinate data is going into attribute index 0, and contains three doubles per vertex */
+	/* Note stride = sizeof ( struct Vertex ) and pointer = ( const GLvoid* ) 0 */
+	glVertexAttribPointer((GLuint)0, 3, GL_DOUBLE, GL_FALSE, sizeof(struct Vertex), (const GLvoid*)offsetof(struct Vertex, position));
+	/* Enable attribute index 0 as being used */
 	glEnableVertexAttribArray(0);
-	glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(GLfloat), diamond, GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-
-	glEnableVertexAttribArray(1);
-	glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindAttribLocation(shaderprogram, 0, "aIn_Position");
-	glBindAttribLocation(shaderprogram, 1, "aIn_Color");
+	/* Specify that our color data is going into attribute index 1, and contains three floats per vertex */
+	/* Note stride = sizeof ( struct Vertex ) and pointer = ( const GLvoid* ) ( 3 * sizeof ( GLdouble ) ) i.e. the size (in bytes)
+	occupied by the first attribute (position) */
+	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex), (const GLvoid*)offsetof(struct Vertex, color)); // bug );
+																																   /* Enable attribute index 1 as being used */
+	glEnableVertexAttribArray(1);/* Bind our second VBO as being the active buffer and storing vertex attributes (colors) */
 	glBindVertexArray(0);
-	printf("All Finished\n");
 }
-void Render(void) 
-{
-	glClear(GL_COLOR_BUFFER_BIT);
+
+void SetupShaders(void) {
+	/* Read our shaders into the appropriate buffers */
+	vertexsource = filetobuf("./tutorial3.vert");
+	fragmentsource = filetobuf("./tutorial3.frag");
+	/* Assign our handles a "name" to new shader objects */
+	vertexshader = glCreateShader(GL_VERTEX_SHADER);
+	fragmentshader = glCreateShader(GL_FRAGMENT_SHADER);
+	/* Associate the source code buffers with each handle */
+	glShaderSource(vertexshader, 1, (const GLchar**)&vertexsource, 0);
+	glShaderSource(fragmentshader, 1, (const GLchar**)&fragmentsource, 0);
+	/* Compile our shader objects */
+	glCompileShader(vertexshader);
+	glCompileShader(fragmentshader);
+	/* Assign our program handle a "name" */
+	shaderprogram = glCreateProgram();
+	glAttachShader(shaderprogram, vertexshader);/* Attach our shaders to our program */
+	glAttachShader(shaderprogram, fragmentshader);
+	glBindAttribLocation(shaderprogram, 0, "in_Position"); /* Bind attribute 0 (coordinates) to in_Position and attribute 1 (colors) to in_Color */
+	glBindAttribLocation(shaderprogram, 1, "in_Color");
+	glLinkProgram(shaderprogram);/* Link our program, and set it as being actively used */
+	glUseProgram(shaderprogram);
+}
+
+void Render(int i) {
+	GLfloat angle;
+	glm::mat4 Projection = glm::perspective(45.0f, 1.0f, 0.1f, 100.0f);
+	float t = glfwGetTime();
+	float p = 400.;
+	t = fmod(t, p);
+	angle = t * 360. / p;
+	glm::mat4 View = glm::mat4(1.);
+	View = glm::translate(View, glm::vec3(0.f, 0.f, -5.0f));
+	View = glm::rotate(View, angle * -1.0f, glm::vec3(1.f, 0.f, 0.f));
+	View = glm::rotate(View, angle * 0.5f, glm::vec3(0.f, 1.f, 0.f));
+	View = glm::rotate(View, angle * 0.5f, glm::vec3(0.f, 0.f, 1.f));
+	glm::mat4 Model = glm::mat4(1.0);
+	glm::mat4 MVP = Projection * View * Model;
+	glUniformMatrix4fv(glGetUniformLocation(shaderprogram, "mvpmatrix"), 1, GL_FALSE, glm::value_ptr(MVP));
+	/* Bind our modelmatrix variable to be a uniform called mvpmatrix in our shaderprogram */
+	glClearColor(0.0, 0.0, 0.0, 1.0);/* Make our background black */
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindVertexArray(vao);
-	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	glDrawArrays(GL_TRIANGLES, 0, 12);
 	glBindVertexArray(0);
-	Check("Test point");
-	glFlush();
+	/* Invoke glDrawArrays telling that our data consists of individual triangles */
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 int cwk1_main()
 {
+	int k = 0;
 	GLFWwindow* window;
 	if (!glfwInit()) {
 		printf("Failed to start GLFW\n");
 		exit(EXIT_FAILURE);
 	}
-	/*
-	* Window Creation
-	*/
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -109,6 +131,7 @@ int cwk1_main()
 	}
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
+
 #ifndef __APPLE__
 	// IMPORTANT: make window curren must be done so glew recognises OpenGL
 	glewExperimental = GL_TRUE;
@@ -118,17 +141,20 @@ int cwk1_main()
 		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
 	}
 #endif
-	fprintf(stderr, "GL INFO %s\n", glGetString(GL_VERSION));
-	SetupShaders();
-	SetupGeometry();
-	glClearColor(1., 1., 1., 1.);
-	while (!glfwWindowShouldClose(window)) {// Main loop
-		Render();// OpenGL rendering goes here...
-		glfwSwapBuffers(window);// Swap front and back rendering buffers
-		glfwPollEvents();
-	}
-	glfwDestroyWindow(window);
-	glfwTerminate();// Close window and terminate GLFW
 
+	glfwSetKeyCallback(window, key_callback);
+	fprintf(stderr, "GL INFO %s\n", glGetString(GL_VERSION));
+	glEnable(GL_DEPTH_TEST);
+	SetupGeometry();
+	SetupShaders();
+	while (!glfwWindowShouldClose(window)) {// Main loop
+		Render(k);// OpenGL rendering goes here...
+		k++;
+		glfwSwapBuffers(window);// Swap front and back rendering buffers
+		glfwPollEvents(); // Poll for events.
+
+	}
+	glfwTerminate();// Close window and terminate GLFW
+	exit(EXIT_SUCCESS);// Exit program
 	return 0;
 }
