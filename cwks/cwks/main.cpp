@@ -5,5 +5,10 @@
 
 int main(void)
 {
-	return testGL();
+
+	cwk1_main();
+
+	getc(stdin);
+
+	return 0;
 }

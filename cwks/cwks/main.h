@@ -7,6 +7,8 @@
 #include <stdio.h>  
 #include <stdlib.h>  
 
+#include "cwk1.h"
+
 
 //Define an error callback  
 static void error_callback(int error, const char* description)
