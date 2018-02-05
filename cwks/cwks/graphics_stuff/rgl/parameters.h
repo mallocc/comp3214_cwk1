@@ -16,8 +16,8 @@ enum Shading {Fixed, Flat, Gouraud};
 
 typedef struct Values
 {
-    Uint32 DefaultColour;
-    Uint32 ObjectColour;
+    uint32_t DefaultColour;
+    uint32_t ObjectColour;
 //
     bool BackFaceCulling;
     bool ZBuffer;
