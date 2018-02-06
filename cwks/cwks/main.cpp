@@ -6,7 +6,9 @@
 int main(void)
 {
 
-	cwk1_main();
+	//cwk1_main();
+
+	testGL();
 
 	getc(stdin);
 
