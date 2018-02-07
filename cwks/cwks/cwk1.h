@@ -20,6 +20,9 @@ int cwk1_main();
 
 
 //// STUCTS ////
+
+//Holds buffers, array object and data in one structure.
+//Able to draw itself and initilise buffers.
 struct Entity
 {
 private:
@@ -39,7 +42,7 @@ public:
 };
 
 
-
+//Returns random float
 inline float		randf()
 {
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);

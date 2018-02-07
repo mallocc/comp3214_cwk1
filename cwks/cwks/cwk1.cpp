@@ -1,20 +1,22 @@
 #include "cwk1.h"
 using namespace glm;
 
-
+//Cube entity
 Entity cube;
 
-//Declare a window object  
+//Window object  
 GLFWwindow* window;
-
-GLuint program_id, mvp_handle;
-
+//Shader program
+GLuint 	program_id;
+//Matrix handle to vertex shader
+GLuint 	mvp_handle;
+//Shader paths
 const char
 * vertex_shader = "tut.vert",
 * fragment_shader = "tut.frag";
 
+//Window dimensions
 const int width = 1280, height = 720;
-
 // position
 glm::vec3 position = glm::vec3(0, 0, 5);
 // horizontal angle : toward -Z
@@ -23,17 +25,20 @@ float horizontalAngle = 3.14f;
 float verticalAngle = 0.0f;
 // Initial Field of View
 float initialFoV = 45.0f;
-
+//Speed variable
 float speed = 1.0f; // 3 units / second
+//Mouse sensitivity
 float mouseSpeed = 0.1f;
-
+//Time delta
 float dt = 1 / 60.0f;
-
+//FPS toggle
 bool fps_on = 0;
-
+//Camera vectors
 glm::vec3 right, up(0, 1, 0), direction;
 
+//Cube vertices count
 const int cube_n = 36;
+//Cube vertex data array
 GLfloat cube_v_b[] = {
 	-1.0f,-1.0f,-1.0f, // triangle 1 : begin
 	-1.0f,-1.0f, 1.0f,
@@ -131,7 +136,7 @@ void Entity::draw()
 }
 
 
-
+//Randomises the colour buffer passed
 void random_colour_buffer(GLfloat ** buffer_data, int n)
 {
 	*buffer_data = (GLfloat*)std::malloc(n * 3 * sizeof(GLfloat));
@@ -139,12 +144,13 @@ void random_colour_buffer(GLfloat ** buffer_data, int n)
 		for (int i = 0; i < 3; i++)
 			(*buffer_data)[3 * v + i] = randf();
 }
-//Define an error callback  
+//Error callback  
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 	_fgetchar();
 }
+//Loads shaders from their files into a shader program
 GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
 
 	// Create the shaders
@@ -241,7 +247,7 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 }
 
 
-
+//Initilise custom objects
 void init_objects()
 {
 	cube = Entity(cube_v_b, nullptr, 36);
@@ -249,7 +255,7 @@ void init_objects()
 	cube.init();
 }
 
-//Define the key input callback  
+//Key input callback  
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -277,6 +283,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 }
 
+//Custom graphics loop
 void loop()
 {
 	cube.draw();
@@ -284,7 +291,7 @@ void loop()
 }
 
 
-
+//GL window initialose
 int initWindow()
 {
 	//Set the error callback  
@@ -348,7 +355,7 @@ int initWindow()
 	init_objects();
 
 }
-
+//FPS code
 void runFPSControls()
 {
 	// Get mouse position
@@ -379,7 +386,7 @@ void runFPSControls()
 
 	
 }
-
+//GL graphics loop
 void glLoop(void(*graphics_loop)())
 {
 	//Main Loop  
@@ -433,6 +440,7 @@ void glLoop(void(*graphics_loop)())
 	exit(EXIT_SUCCESS);
 }
 
+//cwk1 main function
 int cwk1_main()
 {
 	initWindow();
