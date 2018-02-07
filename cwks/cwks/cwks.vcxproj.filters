@@ -53,6 +53,9 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GLTEST.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="tut2.frag">
@@ -77,6 +80,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="tri.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tut.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="tut.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

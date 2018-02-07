@@ -1,17 +1,15 @@
 #version 400
 
-precision highp float;
+// Input vertex data, different for all executions of this shader.
+attribute vec3 vertexPosition_modelspace;
 
-in vec3 in_Position;
-in vec3 in_Color;
+// Output data ; will be interpolated for each fragment.
+varying vec2 UV;
 
+uniform mat4 projMatrix;
+uniform mat4 mvMatrix;
 
-uniform mat4 mvpmatrix;  // mvpmatrix is the result of multiplying the model, view, and projection matrices
-
-out vec3 ex_Color;
-void main(void) {
-
-    gl_Position = mvpmatrix * vec4(in_Position, 1.0); // Multiply the mvp matrix by the vertex to obtain our final vertex position
-    
-    ex_Color = in_Color;
+void main()
+{
+	gl_Position = projMatrix * mvMatrix * vec4(vertexPosition_modelspace, 1);
 }

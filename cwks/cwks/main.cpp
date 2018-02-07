@@ -1,14 +1,11 @@
-
 #include "main.h"
-
-
 
 int main(void)
 {
 
-	//cwk1_main();
+	cwk1_main();
 
-	testGL();
+	//testGL();
 
 	getc(stdin);
 

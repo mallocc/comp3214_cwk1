@@ -2,7 +2,10 @@
 using namespace glm;
 
 
-Entity cube;
+inline float		randf()
+{
+	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+}
 
 //Declare a window object  
 GLFWwindow* window;
@@ -73,78 +76,130 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
-
-
-Entity::Entity(GLfloat * v, GLfloat * c, int _n)
-{
-	v_b = v;
-	c_b = c;
-	n = _n;
-}
-void Entity::init()
-{
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glGenBuffers(1, &vert_b);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
-	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);
-
-	// 1rst attribute buffer : vertices
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-
-	glGenBuffers(1, &colour_b);
-	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
-	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
-
-	// 2nd attribute buffer : colors
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
-	glVertexAttribPointer(
-		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
-	);
-	glBindVertexArray(0);
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-}
-void Entity::draw()
-{
-	glBindVertexArray(vao);
-	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
-	glBindVertexArray(0);
-}
-
-
-
 void random_colour_buffer(GLfloat ** buffer_data, int n)
 {
-	*buffer_data = (GLfloat*)std::malloc(n * 3 * sizeof(GLfloat));
+	*buffer_data = (GLfloat*)std::malloc(n*3*sizeof(GLfloat));
 	for (int v = 0; v < n; v++)
 		for (int i = 0; i < 3; i++)
-			(*buffer_data)[3 * v + i] = randf();
+			(*buffer_data)[3 * v + i] = randf();	
 }
+
+
+struct Entity
+{
+
+	GLuint vert_b, colour_b, vao;
+
+	GLfloat * v_b, * c_b;
+
+	int n;
+
+	Entity()
+	{
+	}
+
+	Entity(GLfloat * v, GLfloat * c, int _n)
+	{
+		v_b = v;
+		c_b = c;
+		n = _n;
+	}
+
+	void init()
+	{
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glGenBuffers(1, &vert_b);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+		glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);
+
+		// 1rst attribute buffer : vertices
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+		glVertexAttribPointer(
+			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
+
+		glGenBuffers(1, &colour_b);
+		glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+		glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+
+		// 2nd attribute buffer : colors
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+		glVertexAttribPointer(
+			1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+			3,                                // size
+			GL_FLOAT,                         // type
+			GL_FALSE,                         // normalized?
+			0,                                // stride
+			(void*)0                          // array buffer offset
+		);
+		glBindVertexArray(0);
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+	}
+
+	void draw()
+	{
+		glBindVertexArray(vao);
+		// Draw the triangle !
+		glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
+		glBindVertexArray(0);
+	}
+
+
+} cube;
+
+void init_objects()
+{
+	cube = Entity(cube_v_b, nullptr, 36);
+	random_colour_buffer(&cube.c_b, cube.n);
+	cube.init();
+}
+
 //Define an error callback  
 static void error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 	_fgetchar();
 }
+
+//Define the key input callback  
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	// Move forward
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+		position += direction * dt * speed;
+	}
+	// Move backward
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+		position -= direction * dt * speed;
+	}
+	// Strafe right
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		position += right * dt * speed;
+	}
+	// Strafe left
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		position -= right * dt * speed;
+	}
+
+	// FPS toggle
+	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
+		fps_on = !fps_on;
+	}
+}
+
 GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
 
 	// Create the shaders
@@ -239,51 +294,6 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 
 	return ProgramID;
 }
-
-
-
-void init_objects()
-{
-	cube = Entity(cube_v_b, nullptr, 36);
-	random_colour_buffer(&cube.c_b, cube.n);
-	cube.init();
-}
-
-//Define the key input callback  
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-	// Move forward
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-		position += direction * dt * speed;
-	}
-	// Move backward
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		position -= direction * dt * speed;
-	}
-	// Strafe right
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-		position += right * dt * speed;
-	}
-	// Strafe left
-	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-		position -= right * dt * speed;
-	}
-
-	// FPS toggle
-	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
-		fps_on = !fps_on;
-	}
-}
-
-void loop()
-{
-	cube.draw();
-
-}
-
-
 
 int initWindow()
 {
@@ -431,6 +441,12 @@ void glLoop(void(*graphics_loop)())
 	glfwTerminate();
 
 	exit(EXIT_SUCCESS);
+}
+
+void loop()
+{
+	cube.draw();
+
 }
 
 int cwk1_main()
