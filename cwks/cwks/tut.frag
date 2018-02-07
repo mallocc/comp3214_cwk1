@@ -1,6 +1,6 @@
-#version 330 core
+#version 400 core
 
-flat out vec3 color;
+out vec3 color;
 
 in vec3 fragmentColor;
 
