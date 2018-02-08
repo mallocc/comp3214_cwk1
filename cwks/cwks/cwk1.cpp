@@ -4,7 +4,7 @@
 using namespace glm;
 
 //Cube entity
-Entity cube, cone, cylinder;
+Entity cube, cone, cylinder, sphere;
 
 //Window object  
 GLFWwindow* window;
@@ -22,7 +22,7 @@ glm::mat4 Projection, View;
 //Window dimensions
 const int width = 1280, height = 720;
 // position
-glm::vec3 position = glm::vec3(0, 0, 5);
+glm::vec3 position = glm::vec3(0, 0, 1.2);
 // horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // vertical angle : 0, look at the horizon
@@ -82,47 +82,15 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
+
+
 std::vector<glm::vec3> generate_cube()
 {
 	std::vector<glm::vec3> v;
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f)); // triangle 1 : begin
-	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f)); // triangle 1 : end
-	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f)); // triangle 2 : begin
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f)); // triangle 2 : end
-	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
-	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
-	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	for (int i = 0; i < 36; i++)
+		v.push_back(glm::vec3(cube_v_b[i*3], cube_v_b[i * 3+1], cube_v_b[i * 3+2]));
 	return v;
 }
-
 
 std::vector<glm::vec3> generate_cone(int k)
 {
@@ -157,24 +125,24 @@ std::vector<glm::vec3> generate_cylinder(int k)
 {
 	std::vector<glm::vec3> v;
 	glm::vec3 t1, t2;
-	float len = 2.;
+	float len = 1.;
 	float step = 2. * 3.141596 / float(k);
 	float Radius = 1., c = 0., s = 0.;
 	for (float a = 0; a <= (2. * 3.141596); a += step)
 	{	
-		v.push_back(vec3());
+		v.push_back(vec3(0.,0., -len));
 		c = Radius * cos(a);
 		s = Radius * sin(a);
-		v.push_back(vec3(c, s, 0.0));
+		v.push_back(vec3(c, s, -len));
 		c = Radius * cos(a - step);
 		s = Radius * sin(a - step);
-		v.push_back(vec3(c, s, 0.0));		
+		v.push_back(vec3(c, s, -len));
 	}
 	for (float a = 0; a > -(2. * 3.141596); a -= step)
 	{		
 		c = Radius * cos(a);
 		s = Radius * sin(a);
-		t1 = vec3(c, s, 0.0);
+		t1 = vec3(c, s, -len);
 		t2 = vec3(c, s, len);
 		c = Radius * cos(a - step);
 		s = Radius * sin(a - step);
@@ -183,7 +151,7 @@ std::vector<glm::vec3> generate_cylinder(int k)
 		v.push_back(t2);
 		v.push_back(vec3(c, s, len));
 		v.push_back(vec3(c, s, len));
-		v.push_back(vec3(c, s, 0.0));
+		v.push_back(vec3(c, s, -len));
 		v.push_back(t1);
 	}
 	for (float a = 0; a <= (2. * 3.141596); a += step)
@@ -198,6 +166,47 @@ std::vector<glm::vec3> generate_cylinder(int k)
 	}
 	return v;
 }
+
+std::vector<glm::vec3> generate_sphere(int lats, int longs)
+{
+	std::vector<glm::vec3> v;
+	glm::vec3 t1, t2;
+	float len = 1.;
+	float step_lats = 2. * 3.141596 / float(lats);
+	float step_longs = 2. * 3.141596 / float(longs);
+	float Radius = 1., x, y, z;
+	for (float a = 0; a < (2. * 3.141596); a += step_lats)
+	{
+		for (float b = 0; b < (2. * 3.141596); b += step_longs)
+		{
+			x = Radius * cos(a) * cos(b);
+			y = Radius * cos(a) * sin(b);
+			z = Radius * sin(a);
+			v.push_back(glm::vec3(x, y, z));
+			x = Radius * cos(a + step_lats) * cos(b);
+			y = Radius * cos(a + step_lats) * sin(b);
+			z = Radius * sin(a + step_lats);
+			v.push_back(glm::vec3(x, y, z));
+			x = Radius * cos(a + step_lats) * cos(b + step_longs);
+			y = Radius * cos(a + step_lats) * sin(b + step_longs);
+			z = Radius * sin(a + step_lats);
+			v.push_back(glm::vec3(x, y, z));
+
+			v.push_back(glm::vec3(x, y, z));
+			x = Radius * cos(a) * cos(b + step_longs);
+			y = Radius * cos(a) * sin(b + step_longs);
+			z = Radius * sin(a);
+			v.push_back(glm::vec3(x, y, z));
+			x = Radius * cos(a) * cos(b);
+			y = Radius * cos(a) * sin(b);
+			z = Radius * sin(a);
+			v.push_back(glm::vec3(x, y, z));
+		}
+	}
+
+	return v;
+}
+
 
 Particle::Particle(vec3 p, vec3 v)
 {
@@ -279,6 +288,13 @@ void random_colour_buffer(glm::vec3 ** buffer_data, int n)
 	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
 	for (int v = 0; v < n; v++)
 			(*buffer_data)[v] = glm::vec3(randf(), randf(), randf());
+}
+//Randomises the colour buffer passed
+void random_alpha_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
+{
+	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
+	for (int v = 0; v < n; v++)
+		(*buffer_data)[v] = glm::vec3(colour.x*randf(), colour.y*randf(), colour.z*randf());
 }
 //Randomises the colour buffer passed
 void generate_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
@@ -415,6 +431,13 @@ void init_objects()
 	random_colour_buffer(&cylinder.c_b, cylinder.n);
 	cylinder.p.pos = glm::vec3(0, -2., 0);
 	cylinder.init();
+
+	std::vector<vec3> v3 = generate_sphere(1000,1000);
+	sphere.v_b = v3.data();
+	sphere.n = v3.size();
+	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
+	sphere.p.pos = glm::vec3(0, -0, 0);
+	sphere.init();
 }
 
 //Key input callback  
@@ -448,9 +471,10 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //Custom graphics loop
 void loop()
 {
-	cube.draw();
-	cone.draw();
-	cylinder.draw();
+	//cube.draw();
+	//cone.draw();
+	//cylinder.draw();
+	sphere.draw();
 }
 
 
@@ -506,7 +530,6 @@ int initWindow()
 	// Get a handle for our "MVP" uniform
 	// Only during the initialisation
 	mvp_handle = glGetUniformLocation(program_id, "MVP");
-	pos_handle = glGetUniformLocation(program_id, "pos");
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
