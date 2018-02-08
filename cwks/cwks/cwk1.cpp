@@ -82,6 +82,47 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
+std::vector<glm::vec3> generate_cube()
+{
+	std::vector<glm::vec3> v;
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f)); // triangle 1 : begin
+	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f)); // triangle 1 : end
+	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f)); // triangle 2 : begin
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f)); // triangle 2 : end
+	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, -1.0f));
+	v.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(-1.0f, 1.0f, 1.0f));
+	v.push_back(glm::vec3(1.0f, -1.0f, 1.0f));
+	return v;
+}
+
 
 std::vector<glm::vec3> generate_cone(int k)
 {
@@ -354,20 +395,23 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 //Initilise custom objects
 void init_objects()
 {
-	//cube = Entity(cube_v_b, nullptr, 36);
-	//random_colour_buffer(&cube.c_b, cube.n);
-	//cube.init();
+	std::vector<vec3> v = generate_cube();
+	cube.v_b = v.data();
+	cube.n = v.size();
+	random_colour_buffer(&cube.c_b, cube.n);
+	cube.p.pos = glm::vec3(0, 0., 0);
+	cube.init();
 
-	std::vector<vec3> v = generate_cone(30);
-	cone.v_b = v.data();
-	cone.n = v.size();
+	std::vector<vec3> v1 = generate_cone(30);
+	cone.v_b = v1.data();
+	cone.n = v1.size();
 	random_colour_buffer(&cone.c_b, cone.n);
 	cone.p.pos = glm::vec3(0, 2., 0);
 	cone.init();
 
-	v = generate_cylinder(30);
-	cylinder.v_b = v.data();
-	cylinder.n = v.size();
+	std::vector<vec3> v2 = generate_cylinder(30);
+	cylinder.v_b = v2.data();
+	cylinder.n = v2.size();
 	random_colour_buffer(&cylinder.c_b, cylinder.n);
 	cylinder.p.pos = glm::vec3(0, -2., 0);
 	cylinder.init();
@@ -404,9 +448,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //Custom graphics loop
 void loop()
 {
-	//cube.draw();
+	cube.draw();
 	cone.draw();
-	//cylinder.draw();
+	cylinder.draw();
 }
 
 
