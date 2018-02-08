@@ -11,7 +11,7 @@ GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle, pos_handle;
+GLuint 	mvp_handle, light_handle;
 //Shader paths
 const char
 * vertex_shader = "tut.vert",
@@ -22,7 +22,7 @@ glm::mat4 Projection, View;
 //Window dimensions
 const int width = 1280, height = 720;
 // position
-glm::vec3 position = glm::vec3(0, 0, 1.2);
+glm::vec3 position = glm::vec3(0, 0, 5);
 // horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // vertical angle : 0, look at the horizon
@@ -34,7 +34,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.01;
+float dt = 0.001;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -82,6 +82,8 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
+
+vec3 light_pos(5,0,0);
 
 
 std::vector<glm::vec3> generate_cube()
@@ -175,9 +177,9 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 	float step_lats = 2. * 3.141596 / float(lats);
 	float step_longs = 2. * 3.141596 / float(longs);
 	float Radius = 1., x, y, z;
-	for (float a = 0; a < (2. * 3.141596); a += step_lats)
+	for (float a = step_lats; a < (2. * 3.141596); a += step_lats)
 	{
-		for (float b = 0; b < (2. * 3.141596); b += step_longs)
+		for (float b = step_longs; b < (2. * 3.141596); b += step_longs)
 		{
 			x = Radius * cos(a) * cos(b);
 			y = Radius * cos(a) * sin(b);
@@ -207,6 +209,18 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 	return v;
 }
 
+
+std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
+{
+	std::vector<glm::vec3> n;
+	for (int i = 0; i < v.size(); i += 3)
+	{
+		glm::vec3 nm = glm::normalize(glm::cross(v[i + 1] - v[i], v[i + 2] - v[i]));
+		for (int j = 0; j < 3; ++j)
+			n.push_back(nm);
+	}
+	return n;
+}
 
 Particle::Particle(vec3 p, vec3 v)
 {
@@ -246,13 +260,29 @@ void Entity::init()
 		(void*)0            // array buffer offset
 	);
 
-	glGenBuffers(1, &colour_b);
-	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
-	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+	//glGenBuffers(1, &colour_b);
+	//glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	//glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+
+	//// 2nd attribute buffer : colors
+	//glEnableVertexAttribArray(1);
+	//glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	//glVertexAttribPointer(
+	//	1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+	//	3,                                // size
+	//	GL_FLOAT,                         // type
+	//	GL_FALSE,                         // normalized?
+	//	0,                                // stride
+	//	(void*)0                          // array buffer offset
+	//);
+
+	glGenBuffers(1, &normal_b);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), n_b, GL_STATIC_DRAW);
 
 	// 2nd attribute buffer : colors
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
 	glVertexAttribPointer(
 		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 		3,                                // size
@@ -261,9 +291,11 @@ void Entity::init()
 		0,                                // stride
 		(void*)0                          // array buffer offset
 	);
+
 	glBindVertexArray(0);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 }
 void Entity::draw()
 {
@@ -275,6 +307,7 @@ void Entity::draw()
 											   // Send our transformation to the currently bound shader, in the "MVP" uniform
 											   // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
 	glUniformMatrix4fv(mvp_handle, 1, GL_FALSE, &mvp[0][0]);
+	glUniform3f(light_handle, light_pos.x, light_pos.y, light_pos.z);
 
 	glBindVertexArray(vao);
 	// Draw the triangle !
@@ -432,7 +465,8 @@ void init_objects()
 	cylinder.p.pos = glm::vec3(0, -2., 0);
 	cylinder.init();
 
-	std::vector<vec3> v3 = generate_sphere(1000,1000);
+	std::vector<vec3> v3 = generate_sphere(25,25);
+	sphere.n_b = generate_normals(v3).data();
 	sphere.v_b = v3.data();
 	sphere.n = v3.size();
 	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
@@ -473,8 +507,8 @@ void loop()
 {
 	//cube.draw();
 	//cone.draw();
-	//cylinder.draw();
-	sphere.draw();
+	cylinder.draw();
+	//sphere.draw();
 }
 
 
@@ -530,6 +564,7 @@ int initWindow()
 	// Get a handle for our "MVP" uniform
 	// Only during the initialisation
 	mvp_handle = glGetUniformLocation(program_id, "MVP");
+	light_handle = glGetUniformLocation(program_id, "light");
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);

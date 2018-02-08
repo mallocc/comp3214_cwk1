@@ -37,10 +37,10 @@ struct Particle
 struct Entity
 {
 private:
-	GLuint vert_b, colour_b, vao;
+	GLuint vert_b, colour_b, normal_b, vao;
 
 public:
-	glm::vec3 * v_b, * c_b;
+	glm::vec3 * v_b, * c_b, *n_b;
 	int n;
 	Particle p;
 	bool is_static;
