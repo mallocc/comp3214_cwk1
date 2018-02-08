@@ -32,7 +32,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 1 / 60.0f;
+float dt = 0.001;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -80,45 +80,61 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
-//int generate_cone(GLfloat ** buffer_data)
-//{
-//	int lod = 32;
-//	*buffer_data = (GLfloat*)std::malloc((lod+3) * 3 * sizeof(GLfloat));
-//	(*buffer_data)[0] = 0.;
-//	(*buffer_data)[1] = 0.;
-//	(*buffer_data)[2] = 0.;
-//	int i = 3;
-//	float step = 2. * 3.141596 / float(lod);
-//	float Radius = 1.;
-//	for (float a = 0; a <= (2. * 3.141596 + step); a += step) {
-//		float c = Radius * cos(a);
-//		float s = Radius * sin(a);
-//		(*buffer_data)[i] = c;
-//		(*buffer_data)[i + 1] = s;
-//		(*buffer_data)[i + 2] = 2.0;
-//		i += 3;
-//	}
-//	return i;
-//}
-int generate_cone(GLfloat ** buffer_data)
+
+std::vector<glm::vec3> generate_cone(int k)
 {
-	std::vector<GLfloat> v;
-	v.push_back(0.);
-	v.push_back(0.);
-	v.push_back(0.);
-	int lod = 32;
-	float step = 2. * 3.141596 / float(lod);
-	float Radius = 1.;
-	for (float a = 0; a <= (2. * 3.141596 + step); a += step) {
-		float c = Radius * cos(a);
-		float s = Radius * sin(a);
-		v.push_back(c);
-		v.push_back(s);
-		v.push_back(2.0);
+	std::vector<glm::vec3> v;
+	float step = 2. * 3.141596 / float(k);
+	float Radius = 1., c=0., s = 0.;
+	v.push_back(vec3());
+	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step) 
+	{	
+		c = Radius * cos(a);
+		s = Radius * sin(a);
+		v.push_back(vec3(c, s, 2.0));
 	}
-	GLfloat * t = &v[0];
-	buffer_data = &t;
-	return v.size();
+	return v;
+}
+
+std::vector<glm::vec3> generate_cylinder(int k)
+{
+	std::vector<glm::vec3> v;
+	glm::vec3 t1, t2;
+	float step = 2. * 3.141596 / float(k);
+	float Radius = 1., c = 0., s = 0.;
+	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	{	
+		c = Radius * cos(a);
+		s = Radius * sin(a);
+		v.push_back(vec3(c, s, 0.0));
+		v.push_back(vec3());
+		v.push_back(vec3(c, s, 0.0));
+	}
+	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	{		
+		c = Radius * cos(a);
+		s = Radius * sin(a);
+		t1 = vec3(c, s, 0.0);
+		t2 = vec3(c, s, 1.0);
+		c = Radius * cos(a - step);
+		s = Radius * sin(a - step);
+
+		v.push_back(t1);
+		v.push_back(t2);
+		v.push_back(vec3(c, s, 1.0));
+		v.push_back(t1);
+		v.push_back(vec3(c, s, 0.0));
+		v.push_back(t2);
+	}
+	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	{
+		c = Radius * cos(a);
+		s = Radius * sin(a);
+		v.push_back(vec3(c, s, 1.0));
+		v.push_back(vec3(0.,0.,1.));
+		v.push_back(vec3(c, s, 1.0));
+	}
+	return v;
 }
 
 Particle::Particle(vec3 p, vec3 v)
@@ -130,7 +146,8 @@ void Particle::update(float dt)
 {
 	pos += vel * dt;
 }
-Entity::Entity(GLfloat * v, GLfloat * c, int _n)
+
+Entity::Entity(glm::vec3 * v, glm::vec3 * c, int _n)
 {
 	v_b = v;
 	c_b = c;
@@ -185,15 +202,22 @@ void Entity::draw()
 	glBindVertexArray(0);
 }
 
-
 //Randomises the colour buffer passed
-void random_colour_buffer(GLfloat ** buffer_data, int n)
+void random_colour_buffer(glm::vec3 ** buffer_data, int n)
 {
-	*buffer_data = (GLfloat*)std::malloc(n * 3 * sizeof(GLfloat));
+	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
 	for (int v = 0; v < n; v++)
-		for (int i = 0; i < 3; i++)
-			(*buffer_data)[3 * v + i] = randf();
+			(*buffer_data)[v] = glm::vec3(randf(), randf(), randf());
 }
+//Randomises the colour buffer passed
+void generate_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
+{
+	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
+	for (int v = 0; v < n; v++)
+		(*buffer_data)[v] = colour;
+}
+
+
 //Error callback  
 static void error_callback(int error, const char* description)
 {
@@ -300,12 +324,15 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 //Initilise custom objects
 void init_objects()
 {
-	cube = Entity(cube_v_b, nullptr, 36);
-	random_colour_buffer(&cube.c_b, cube.n);
-	cube.init();
+	//cube = Entity(cube_v_b, nullptr, 36);
+	//random_colour_buffer(&cube.c_b, cube.n);
+	//cube.init();
 
-	cone.n = generate_cone(&cone.v_b) / 3;
+	std::vector<vec3> v = generate_cone(30);
+	cone.v_b = v.data();
+	cone.n = v.size();
 	random_colour_buffer(&cone.c_b, cone.n);
+	//generate_colour_buffer(&cone.c_b, cone.n, glm::vec3(1.,1.,1.));
 	cone.init();
 
 	std::cout << cone.n << std::endl;
@@ -478,6 +505,8 @@ void glLoop(void(*graphics_loop)())
 
 		//Clear color buffer  
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glClearColor(.5,.5,.5,1.);
 
 		graphics_loop();
 

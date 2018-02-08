@@ -127,3 +127,109 @@ void draw(GLuint * vao, int n)
 	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(0);
 }
+
+//Holds buffers, array object and data in one structure.
+//Able to draw itself and initilise buffers.
+struct Entity2
+{
+private:
+	GLuint vert_b, colour_b, vao;
+
+public:
+	GLfloat * v_b, * c_b;
+	int n;
+	Particle p;
+	bool is_static;
+
+	Entity2() {}
+
+	Entity2(GLfloat * v, GLfloat * c, int _n);
+
+	void init();
+
+	void draw();
+};
+
+Entity2::Entity2(GLfloat * v, GLfloat * c, int _n)
+{
+	v_b = v;
+	c_b = c;
+	n = _n;
+}
+void Entity2::init()
+{
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vert_b);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);
+
+	// 1rst attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+	glVertexAttribPointer(
+		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
+	glGenBuffers(1, &colour_b);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glVertexAttribPointer(
+		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+	glBindVertexArray(0);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+}
+void Entity2::draw()
+{
+	glBindVertexArray(vao);
+	// Draw the triangle !
+	glDrawArrays(GL_TRIANGLE_FAN, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glBindVertexArray(0);
+}
+//Randomises the colour buffer passed
+void random_colour_buffer_floats(GLfloat ** buffer_data, int n)
+{
+	*buffer_data = (GLfloat*)std::malloc(n * 3 * sizeof(GLfloat));
+	for (int v = 0; v < n; v++)
+		for (int i = 0; i < 3; i++)
+			(*buffer_data)[3 * v + i] = randf();
+}
+
+int generate_cone2(GLfloat ** buffer_data)
+{
+	int lod = 32;
+	*buffer_data = (GLfloat*)std::malloc((lod+3) * 3 * sizeof(GLfloat));
+	(*buffer_data)[0] = 0.;
+	(*buffer_data)[1] = 0.;
+	(*buffer_data)[2] = 0.;
+	int i = 3;
+	float step = 2. * 3.141596 / float(lod);
+	float Radius = 1.;
+	for (float a = 0; a <= (2. * 3.141596 + step); a += step) {
+		float c = Radius * cos(a);
+		float s = Radius * sin(a);
+		(*buffer_data)[i] = c;
+		(*buffer_data)[i + 1] = s;
+		(*buffer_data)[i + 2] = 2.0;
+		i += 3;
+	}
+	return i;
+}

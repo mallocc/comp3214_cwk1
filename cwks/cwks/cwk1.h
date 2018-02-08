@@ -34,29 +34,25 @@ struct Particle
 };
 
 
-
-//Holds buffers, array object and data in one structure.
-//Able to draw itself and initilise buffers.
 struct Entity
 {
 private:
 	GLuint vert_b, colour_b, vao;
 
 public:
-	GLfloat * v_b, *c_b;
+	glm::vec3 * v_b, * c_b;
 	int n;
 	Particle p;
 	bool is_static;
 
 	Entity() {}
 
-	Entity(GLfloat * v, GLfloat * c, int _n);
+	Entity(glm::vec3 * v, glm::vec3 * c, int _n);
 
 	void init();
 
 	void draw();
 };
-
 
 //Returns random float
 inline float		randf()
