@@ -21,6 +21,20 @@ int cwk1_main();
 
 //// STUCTS ////
 
+struct Particle
+{
+
+	glm::vec3 pos, vel;
+
+	Particle() {}
+
+	Particle(glm::vec3 p, glm::vec3 v);
+
+	void update(float dt);
+};
+
+
+
 //Holds buffers, array object and data in one structure.
 //Able to draw itself and initilise buffers.
 struct Entity
@@ -31,6 +45,8 @@ private:
 public:
 	GLfloat * v_b, *c_b;
 	int n;
+	Particle p;
+	bool is_static;
 
 	Entity() {}
 

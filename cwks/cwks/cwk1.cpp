@@ -1,8 +1,10 @@
 #include "cwk1.h"
+
+
 using namespace glm;
 
 //Cube entity
-Entity cube;
+Entity cube, cone;
 
 //Window object  
 GLFWwindow* window;
@@ -78,8 +80,56 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
+//int generate_cone(GLfloat ** buffer_data)
+//{
+//	int lod = 32;
+//	*buffer_data = (GLfloat*)std::malloc((lod+3) * 3 * sizeof(GLfloat));
+//	(*buffer_data)[0] = 0.;
+//	(*buffer_data)[1] = 0.;
+//	(*buffer_data)[2] = 0.;
+//	int i = 3;
+//	float step = 2. * 3.141596 / float(lod);
+//	float Radius = 1.;
+//	for (float a = 0; a <= (2. * 3.141596 + step); a += step) {
+//		float c = Radius * cos(a);
+//		float s = Radius * sin(a);
+//		(*buffer_data)[i] = c;
+//		(*buffer_data)[i + 1] = s;
+//		(*buffer_data)[i + 2] = 2.0;
+//		i += 3;
+//	}
+//	return i;
+//}
+int generate_cone(GLfloat ** buffer_data)
+{
+	std::vector<GLfloat> v;
+	v.push_back(0.);
+	v.push_back(0.);
+	v.push_back(0.);
+	int lod = 32;
+	float step = 2. * 3.141596 / float(lod);
+	float Radius = 1.;
+	for (float a = 0; a <= (2. * 3.141596 + step); a += step) {
+		float c = Radius * cos(a);
+		float s = Radius * sin(a);
+		v.push_back(c);
+		v.push_back(s);
+		v.push_back(2.0);
+	}
+	GLfloat * t = &v[0];
+	buffer_data = &t;
+	return v.size();
+}
 
-
+Particle::Particle(vec3 p, vec3 v)
+{
+	pos = p;
+	vel = v;
+}
+void Particle::update(float dt)
+{
+	pos += vel * dt;
+}
 Entity::Entity(GLfloat * v, GLfloat * c, int _n)
 {
 	v_b = v;
@@ -131,7 +181,7 @@ void Entity::draw()
 {
 	glBindVertexArray(vao);
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLE_FAN, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(0);
 }
 
@@ -253,6 +303,13 @@ void init_objects()
 	cube = Entity(cube_v_b, nullptr, 36);
 	random_colour_buffer(&cube.c_b, cube.n);
 	cube.init();
+
+	cone.n = generate_cone(&cone.v_b) / 3;
+	random_colour_buffer(&cone.c_b, cone.n);
+	cone.init();
+
+	std::cout << cone.n << std::endl;
+
 }
 
 //Key input callback  
@@ -286,8 +343,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //Custom graphics loop
 void loop()
 {
-	cube.draw();
-
+	//cube.draw();
+	cone.draw();
 }
 
 
@@ -395,7 +452,7 @@ void glLoop(void(*graphics_loop)())
 		if(fps_on)
 			runFPSControls();
 
-		position = glm::quat(glm::vec3(0.00001, 0.0001, 0)) * position;
+		position = glm::quat(glm::vec3(0.05 * dt, 0.1*dt, 0)) * position;
 
 		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 		glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
