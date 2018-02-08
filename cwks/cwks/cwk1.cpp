@@ -17,6 +17,8 @@ const char
 * vertex_shader = "tut.vert",
 * fragment_shader = "tut.frag";
 
+glm::mat4 Projection, View;
+
 //Window dimensions
 const int width = 1280, height = 720;
 // position
@@ -215,7 +217,15 @@ void Entity::init()
 }
 void Entity::draw()
 {
-	glUniform4f(pos_handle, p.pos.x, p.pos.y, p.pos.z, 0.);
+
+	glm::mat4 Model = glm::translate(glm::mat4(1.), p.pos);
+	// Our ModelViewProjection : multiplication of our 3 matrices
+	glm::mat4 mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
+
+											   // Send our transformation to the currently bound shader, in the "MVP" uniform
+											   // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
+	glUniformMatrix4fv(mvp_handle, 1, GL_FALSE, &mvp[0][0]);
+
 	glBindVertexArray(vao);
 	// Draw the triangle !
 	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
@@ -352,14 +362,14 @@ void init_objects()
 	cone.v_b = v.data();
 	cone.n = v.size();
 	random_colour_buffer(&cone.c_b, cone.n);
-	cone.p.pos = glm::vec3(1., 1., 1.);
+	cone.p.pos = glm::vec3(0, 2., 0);
 	cone.init();
 
 	v = generate_cylinder(30);
 	cylinder.v_b = v.data();
 	cylinder.n = v.size();
 	random_colour_buffer(&cylinder.c_b, cylinder.n);
-	cylinder.p.pos = glm::vec3(-1., -1., -1.);
+	cylinder.p.pos = glm::vec3(0, -2., 0);
 	cylinder.init();
 }
 
@@ -396,7 +406,7 @@ void loop()
 {
 	//cube.draw();
 	cone.draw();
-	cylinder.draw();
+	//cylinder.draw();
 }
 
 
@@ -508,26 +518,17 @@ void glLoop(void(*graphics_loop)())
 		position = glm::quat(glm::vec3(0.05 * dt, 0.1*dt, 0)) * position;
 
 		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-		glm::mat4 Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
 
 		// Or, for an ortho camera :
 		//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
 
 		// Camera matrix
-		glm::mat4 View = glm::lookAt(
+		View = glm::lookAt(
 			position, // Camera is at (4,3,3), in World Space
 			-position, // and looks at the origin
 			up  // Head is up (set to 0,-1,0 to look upside-down)
 		);
-
-		// Model matrix : an identity matrix (model will be at the origin)
-		glm::mat4 Model = glm::mat4(1.0f);
-		// Our ModelViewProjection : multiplication of our 3 matrices
-		glm::mat4 mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
-
-												   // Send our transformation to the currently bound shader, in the "MVP" uniform
-												   // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-		glUniformMatrix4fv(mvp_handle, 1, GL_FALSE, &mvp[0][0]);
 
 		//Clear color buffer  
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
