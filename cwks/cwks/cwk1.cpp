@@ -4,14 +4,14 @@
 using namespace glm;
 
 //Cube entity
-Entity cube, cone;
+Entity cube, cone, cylinder;
 
 //Window object  
 GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle;
+GLuint 	mvp_handle, pos_handle;
 //Shader paths
 const char
 * vertex_shader = "tut.vert",
@@ -32,7 +32,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.001;
+float dt = 0.01;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -86,12 +86,26 @@ std::vector<glm::vec3> generate_cone(int k)
 	std::vector<glm::vec3> v;
 	float step = 2. * 3.141596 / float(k);
 	float Radius = 1., c=0., s = 0.;
-	v.push_back(vec3());
-	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step) 
-	{	
+	float len = 2.;
+	for (float a = 0; a <= (2. * 3.141596); a += step)
+	{
+		v.push_back(vec3());
 		c = Radius * cos(a);
 		s = Radius * sin(a);
-		v.push_back(vec3(c, s, 2.0));
+		v.push_back(vec3(c, s, len));
+		c = Radius * cos(a - step);
+		s = Radius * sin(a - step);
+		v.push_back(vec3(c, s, len));
+	}
+	for (float a = 0; a <= (2. * 3.141596); a += step)
+	{
+		c = Radius * cos(a - step);
+		s = Radius * sin(a - step);
+		v.push_back(vec3(c, s, len));
+		c = Radius * cos(a);
+		s = Radius * sin(a);
+		v.push_back(vec3(c, s, len));
+		v.push_back(vec3(0., 0., len));
 	}
 	return v;
 }
@@ -100,39 +114,44 @@ std::vector<glm::vec3> generate_cylinder(int k)
 {
 	std::vector<glm::vec3> v;
 	glm::vec3 t1, t2;
+	float len = 2.;
 	float step = 2. * 3.141596 / float(k);
 	float Radius = 1., c = 0., s = 0.;
-	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	for (float a = 0; a <= (2. * 3.141596); a += step)
 	{	
+		v.push_back(vec3());
 		c = Radius * cos(a);
 		s = Radius * sin(a);
 		v.push_back(vec3(c, s, 0.0));
-		v.push_back(vec3());
-		v.push_back(vec3(c, s, 0.0));
+		c = Radius * cos(a - step);
+		s = Radius * sin(a - step);
+		v.push_back(vec3(c, s, 0.0));		
 	}
-	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	for (float a = 0; a > -(2. * 3.141596); a -= step)
 	{		
 		c = Radius * cos(a);
 		s = Radius * sin(a);
 		t1 = vec3(c, s, 0.0);
-		t2 = vec3(c, s, 1.0);
+		t2 = vec3(c, s, len);
 		c = Radius * cos(a - step);
 		s = Radius * sin(a - step);
 
 		v.push_back(t1);
 		v.push_back(t2);
-		v.push_back(vec3(c, s, 1.0));
-		v.push_back(t1);
+		v.push_back(vec3(c, s, len));
+		v.push_back(vec3(c, s, len));
 		v.push_back(vec3(c, s, 0.0));
-		v.push_back(t2);
+		v.push_back(t1);
 	}
-	for (float a = 0; a >= -(2. * 3.141596 + step); a -= step)
+	for (float a = 0; a <= (2. * 3.141596); a += step)
 	{
+		c = Radius * cos(a - step);
+		s = Radius * sin(a - step);
+		v.push_back(vec3(c, s, len));		
 		c = Radius * cos(a);
 		s = Radius * sin(a);
-		v.push_back(vec3(c, s, 1.0));
-		v.push_back(vec3(0.,0.,1.));
-		v.push_back(vec3(c, s, 1.0));
+		v.push_back(vec3(c, s, len));
+		v.push_back(vec3(0.,0.,len));
 	}
 	return v;
 }
@@ -196,9 +215,10 @@ void Entity::init()
 }
 void Entity::draw()
 {
+	glUniform4f(pos_handle, p.pos.x, p.pos.y, p.pos.z, 0.);
 	glBindVertexArray(vao);
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLE_FAN, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(0);
 }
 
@@ -332,11 +352,15 @@ void init_objects()
 	cone.v_b = v.data();
 	cone.n = v.size();
 	random_colour_buffer(&cone.c_b, cone.n);
-	//generate_colour_buffer(&cone.c_b, cone.n, glm::vec3(1.,1.,1.));
+	cone.p.pos = glm::vec3(1., 1., 1.);
 	cone.init();
 
-	std::cout << cone.n << std::endl;
-
+	v = generate_cylinder(30);
+	cylinder.v_b = v.data();
+	cylinder.n = v.size();
+	random_colour_buffer(&cylinder.c_b, cylinder.n);
+	cylinder.p.pos = glm::vec3(-1., -1., -1.);
+	cylinder.init();
 }
 
 //Key input callback  
@@ -372,6 +396,7 @@ void loop()
 {
 	//cube.draw();
 	cone.draw();
+	cylinder.draw();
 }
 
 
@@ -427,6 +452,7 @@ int initWindow()
 	// Get a handle for our "MVP" uniform
 	// Only during the initialisation
 	mvp_handle = glGetUniformLocation(program_id, "MVP");
+	pos_handle = glGetUniformLocation(program_id, "pos");
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
