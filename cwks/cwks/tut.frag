@@ -15,12 +15,8 @@ uniform mat4 V;
 uniform mat4 P;
 uniform vec3 eye_pos;
 
-const float specularScale = 0.2;
-const float shininess = 20.0;
-const float roughness = 1.0;
-const float albedo = 0.95;
-
-
+const float specularScale = 0.5;
+const float shininess = 25.0;
 
 void main() {
 

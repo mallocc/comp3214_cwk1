@@ -34,7 +34,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.05;
+float dt = 0.001;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
