@@ -11,7 +11,7 @@ GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle;
+GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle, eye_handle;
 //Shader paths
 const char
 * vertex_shader = "tut.vert",
@@ -34,7 +34,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.001;
+float dt = 0.05;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -83,7 +83,7 @@ GLfloat cube_v_b[] = {
 };
 
 
-vec3 light_pos(2,0,0);
+vec3 light_pos(5,0,0);
 
 
 
@@ -219,6 +219,7 @@ std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
 	{
 		glm::vec3 nm = glm::normalize(glm::cross(v[i + 1] - v[i], v[i + 2] - v[i]));
 		for (int j = 0; j < 3; ++j)
+			//n.push_back(-v[i]);
 			n.push_back(nm);
 	}
 	return n;
@@ -313,6 +314,7 @@ void Entity::draw()
 	glUniformMatrix4fv(v_handle, 1, GL_FALSE, &View[0][0]);
 	glUniformMatrix4fv(p_handle, 1, GL_FALSE, &Projection[0][0]);
 	glUniform3f(light_handle, light_pos.x, light_pos.y, light_pos.z);
+	glUniform3f(eye_handle, position.x, position.y, position.z);
 
 	glBindVertexArray(vao);
 	// Draw the triangle !
@@ -450,32 +452,35 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 void init_objects()
 {
 	std::vector<vec3> v = generate_cube();
+	cube.n_b = generate_normals(v).data();
 	cube.v_b = v.data();
 	cube.n = v.size();
 	random_colour_buffer(&cube.c_b, cube.n);
 	cube.p.pos = glm::vec3(0, 0., 0);
 	cube.init();
 
-	std::vector<vec3> v1 = generate_cone(30);
+	std::vector<vec3> v1 = generate_cone(100);
+	cone.n_b = generate_normals(v1).data();
 	cone.v_b = v1.data();
 	cone.n = v1.size();
 	random_colour_buffer(&cone.c_b, cone.n);
 	cone.p.pos = glm::vec3(0, 2., 0);
 	cone.init();
 
-	std::vector<vec3> v2 = generate_cylinder(30);
+	std::vector<vec3> v2 = generate_cylinder(100);
+	cylinder.n_b = generate_normals(v2).data();
 	cylinder.v_b = v2.data();
 	cylinder.n = v2.size();
 	random_colour_buffer(&cylinder.c_b, cylinder.n);
-	cylinder.p.pos = glm::vec3(0, -2., 0);
+	cylinder.p.pos = glm::vec3(0, 0., 0);
 	cylinder.init();
 
-	std::vector<vec3> v3 = generate_sphere(25,25);
+	std::vector<vec3> v3 = generate_sphere(30,30);
 	sphere.n_b = generate_normals(v3).data();
 	sphere.v_b = v3.data();
 	sphere.n = v3.size();
 	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
-	sphere.p.pos = glm::vec3(0, -0, 0);
+	sphere.p.pos = glm::vec3(0, -2, 0);
 	sphere.init();
 
 	glm::vec3(0, -0, 0).length();
@@ -513,8 +518,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 void loop()
 {
 	//cube.draw();
-	//cone.draw();
-	//cylinder.draw();
+	cone.draw();
+	cylinder.draw();
 	sphere.draw();
 }
 
@@ -575,6 +580,7 @@ int initWindow()
 	v_handle = glGetUniformLocation(program_id, "V");
 	p_handle = glGetUniformLocation(program_id, "P");
 	light_handle = glGetUniformLocation(program_id, "light");
+	eye_handle = glGetUniformLocation(program_id, "eye_pos");
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -627,7 +633,9 @@ void glLoop(void(*graphics_loop)())
 		if(fps_on)
 			runFPSControls();
 
-		position = glm::quat(glm::vec3(0.05 * dt, 0.1*dt, 0)) * position;
+		position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
+
+		//light_pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, 0)) * light_pos;
 
 		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
