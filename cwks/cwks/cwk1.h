@@ -21,6 +21,8 @@ int cwk1_main();
 
 //// STUCTS ////
 
+
+
 struct Particle
 {
 
@@ -59,3 +61,22 @@ inline float		randf()
 {
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 }
+
+struct gl_LightSourceParameters
+{
+	glm::vec4 ambient;              // Aclarri   
+	glm::vec4 diffuse;              // Dcli   
+	glm::vec4 specular;             // Scli   
+	glm::vec4 position;             // Ppli   
+	glm::vec4 halfVector;           // Derived: Hi   
+	glm::vec3 spotDirection;        // Sdli   
+	float spotExponent;        // Srli   
+	float spotCutoff;          // Crli                              
+							   // (range: [0.0,90.0], 180.0)   
+	float spotCosCutoff;       // Derived: cos(Crli)                 
+							   // (range: [1.0,0.0],-1.0)   
+	float constantAttenuation; // K0   
+	float linearAttenuation;   // K1   
+	float quadraticAttenuation;// K2  
+};
+

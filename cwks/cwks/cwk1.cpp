@@ -11,7 +11,7 @@ GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle, light_handle;
+GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle;
 //Shader paths
 const char
 * vertex_shader = "tut.vert",
@@ -83,7 +83,9 @@ GLfloat cube_v_b[] = {
 };
 
 
-vec3 light_pos(5,0,0);
+vec3 light_pos(2,0,0);
+
+
 
 
 std::vector<glm::vec3> generate_cube()
@@ -260,31 +262,31 @@ void Entity::init()
 		(void*)0            // array buffer offset
 	);
 
-	//glGenBuffers(1, &colour_b);
-	//glBindBuffer(GL_ARRAY_BUFFER, colour_b);
-	//glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+	glGenBuffers(1, &colour_b);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
 
-	//// 2nd attribute buffer : colors
-	//glEnableVertexAttribArray(1);
-	//glBindBuffer(GL_ARRAY_BUFFER, colour_b);
-	//glVertexAttribPointer(
-	//	1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
-	//	3,                                // size
-	//	GL_FLOAT,                         // type
-	//	GL_FALSE,                         // normalized?
-	//	0,                                // stride
-	//	(void*)0                          // array buffer offset
-	//);
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glVertexAttribPointer(
+		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
 
 	glGenBuffers(1, &normal_b);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
 	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), n_b, GL_STATIC_DRAW);
 
 	// 2nd attribute buffer : colors
-	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
 	glVertexAttribPointer(
-		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		2,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 		3,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
@@ -307,6 +309,9 @@ void Entity::draw()
 											   // Send our transformation to the currently bound shader, in the "MVP" uniform
 											   // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
 	glUniformMatrix4fv(mvp_handle, 1, GL_FALSE, &mvp[0][0]);
+	glUniformMatrix4fv(m_handle, 1, GL_FALSE, &Model[0][0]);
+	glUniformMatrix4fv(v_handle, 1, GL_FALSE, &View[0][0]);
+	glUniformMatrix4fv(p_handle, 1, GL_FALSE, &Projection[0][0]);
 	glUniform3f(light_handle, light_pos.x, light_pos.y, light_pos.z);
 
 	glBindVertexArray(vao);
@@ -472,6 +477,8 @@ void init_objects()
 	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
 	sphere.p.pos = glm::vec3(0, -0, 0);
 	sphere.init();
+
+	glm::vec3(0, -0, 0).length();
 }
 
 //Key input callback  
@@ -507,8 +514,8 @@ void loop()
 {
 	//cube.draw();
 	//cone.draw();
-	cylinder.draw();
-	//sphere.draw();
+	//cylinder.draw();
+	sphere.draw();
 }
 
 
@@ -564,6 +571,9 @@ int initWindow()
 	// Get a handle for our "MVP" uniform
 	// Only during the initialisation
 	mvp_handle = glGetUniformLocation(program_id, "MVP");
+	m_handle = glGetUniformLocation(program_id, "M");
+	v_handle = glGetUniformLocation(program_id, "V");
+	p_handle = glGetUniformLocation(program_id, "P");
 	light_handle = glGetUniformLocation(program_id, "light");
 
 	// Enable depth test
