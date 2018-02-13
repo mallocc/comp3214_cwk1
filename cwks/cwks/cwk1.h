@@ -43,6 +43,8 @@ private:
 
 public:
 	glm::vec3 * v_b, * c_b, *n_b;
+	glm::vec3 rotation = glm::vec3(1, 0, 0);
+	GLfloat theta;
 	int n;
 	Particle p;
 	bool is_static;
@@ -62,21 +64,12 @@ inline float		randf()
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 }
 
-struct gl_LightSourceParameters
+struct Light
 {
-	glm::vec4 ambient;              // Aclarri   
-	glm::vec4 diffuse;              // Dcli   
-	glm::vec4 specular;             // Scli   
-	glm::vec4 position;             // Ppli   
-	glm::vec4 halfVector;           // Derived: Hi   
-	glm::vec3 spotDirection;        // Sdli   
-	float spotExponent;        // Srli   
-	float spotCutoff;          // Crli                              
-							   // (range: [0.0,90.0], 180.0)   
-	float spotCosCutoff;       // Derived: cos(Crli)                 
-							   // (range: [1.0,0.0],-1.0)   
-	float constantAttenuation; // K0   
-	float linearAttenuation;   // K1   
-	float quadraticAttenuation;// K2  
+	glm::vec3 pos;
+	glm::vec3 color;
+	float brightness;
+	float specular_scale;
+	float shininess;
 };
 

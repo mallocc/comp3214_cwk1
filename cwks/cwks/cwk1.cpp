@@ -6,12 +6,17 @@ using namespace glm;
 //Cube entity
 Entity cube, cone, cylinder, sphere;
 
+Light lights[1] = { { glm::vec3(0,5,0),glm::vec3(1,1,1),30,0.1,100 } };
+
+vec3 ambient_color(.1, .1, .1);
 //Window object  
 GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle, eye_handle;
+GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle, eye_handle, ubo;
+GLuint light_handles[1][5], ambient_handle;
+
 //Shader paths
 const char
 * vertex_shader = "tut.vert",
@@ -22,7 +27,7 @@ glm::mat4 Projection, View;
 //Window dimensions
 const int width = 1280, height = 720;
 // position
-glm::vec3 position = glm::vec3(0, 0, 5);
+glm::vec3 position = glm::vec3(0, 0, 10);
 // horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // vertical angle : 0, look at the horizon
@@ -34,7 +39,7 @@ float speed = 1.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.001;
+float dt = 0.01;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -81,12 +86,6 @@ GLfloat cube_v_b[] = {
 	-1.0f, 1.0f, 1.0f,
 	1.0f,-1.0f, 1.0f
 };
-
-
-vec3 light_pos(5,0,0);
-
-
-
 
 std::vector<glm::vec3> generate_cube()
 {
@@ -179,9 +178,9 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 	float step_lats = 2. * 3.141596 / float(lats);
 	float step_longs = 2. * 3.141596 / float(longs);
 	float Radius = 1., x, y, z;
-	for (float a = step_lats; a < (2. * 3.141596); a += step_lats)
+	for (float a = step_lats; a <= (2. * 3.141596); a += step_lats)
 	{
-		for (float b = step_longs; b < (2. * 3.141596); b += step_longs)
+		for (float b = step_longs; b <= (2. * 3.141596); b += step_longs)
 		{
 			x = Radius * cos(a) * cos(b);
 			y = Radius * cos(a) * sin(b);
@@ -210,7 +209,6 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 
 	return v;
 }
-
 
 std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
 {
@@ -243,6 +241,8 @@ Entity::Entity(glm::vec3 * v, glm::vec3 * c, int _n)
 }
 void Entity::init()
 {
+	
+
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
@@ -303,18 +303,21 @@ void Entity::init()
 void Entity::draw()
 {
 
-	glm::mat4 Model = glm::translate(glm::mat4(1.), p.pos);
+	glm::mat4 Model = glm::translate(glm::mat4(1.), p.pos) * glm::rotate(glm::mat4(1.),theta,rotation);
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	glm::mat4 mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
 											   // Send our transformation to the currently bound shader, in the "MVP" uniform
 											   // This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
-	glUniformMatrix4fv(mvp_handle, 1, GL_FALSE, &mvp[0][0]);
 	glUniformMatrix4fv(m_handle, 1, GL_FALSE, &Model[0][0]);
 	glUniformMatrix4fv(v_handle, 1, GL_FALSE, &View[0][0]);
 	glUniformMatrix4fv(p_handle, 1, GL_FALSE, &Projection[0][0]);
-	glUniform3f(light_handle, light_pos.x, light_pos.y, light_pos.z);
-	glUniform3f(eye_handle, position.x, position.y, position.z);
+	glUniform3f(ambient_handle, ambient_color.x, ambient_color.y, ambient_color.z);
+	glUniform3f(light_handles[0][0], lights[0].pos.x, lights[0].pos.y, lights[0].pos.z);
+	glUniform3f(light_handles[0][1], lights[0].color.x, lights[0].color.y, lights[0].color.z);
+	glUniform1f(light_handles[0][2], lights[0].brightness);
+	glUniform1f(light_handles[0][3], lights[0].shininess);
+	glUniform1f(light_handles[0][4], lights[0].specular_scale);
 
 	glBindVertexArray(vao);
 	// Draw the triangle !
@@ -465,6 +468,8 @@ void init_objects()
 	cone.n = v1.size();
 	random_colour_buffer(&cone.c_b, cone.n);
 	cone.p.pos = glm::vec3(0, 2., 0);
+	cone.rotation = vec3(1, 0, 0);
+	cone.theta = 3.141596/2;
 	cone.init();
 
 	std::vector<vec3> v2 = generate_cylinder(100);
@@ -472,18 +477,19 @@ void init_objects()
 	cylinder.v_b = v2.data();
 	cylinder.n = v2.size();
 	random_colour_buffer(&cylinder.c_b, cylinder.n);
-	cylinder.p.pos = glm::vec3(0, 0., 0);
+	cylinder.p.pos = glm::vec3(0, -1, 0);
+	cylinder.rotation = vec3(1, 0, 0);
+	cylinder.theta = 3.141596 / 2;
 	cylinder.init();
 
-	std::vector<vec3> v3 = generate_sphere(30,30);
+	std::vector<vec3> v3 = generate_sphere(30,31);
 	sphere.n_b = generate_normals(v3).data();
 	sphere.v_b = v3.data();
 	sphere.n = v3.size();
 	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
-	sphere.p.pos = glm::vec3(0, -2, 0);
+	sphere.p.pos = glm::vec3(0, -3, 0);
 	sphere.init();
 
-	glm::vec3(0, -0, 0).length();
 }
 
 //Key input callback  
@@ -579,8 +585,13 @@ int initWindow()
 	m_handle = glGetUniformLocation(program_id, "M");
 	v_handle = glGetUniformLocation(program_id, "V");
 	p_handle = glGetUniformLocation(program_id, "P");
-	light_handle = glGetUniformLocation(program_id, "light");
-	eye_handle = glGetUniformLocation(program_id, "eye_pos");
+	ambient_handle = glGetUniformLocation(program_id, "ambient_color");
+	//light_handle = glGetUniformBlockIndex(program_id, "light");
+	light_handles[0][0] = glGetUniformLocation(program_id, "light");
+	light_handles[0][1] = glGetUniformLocation(program_id, "diffuse_color");
+	light_handles[0][2] = glGetUniformLocation(program_id, "brightness");
+	light_handles[0][3] = glGetUniformLocation(program_id, "shininess");
+	light_handles[0][4] = glGetUniformLocation(program_id, "specular_scale");
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -653,7 +664,7 @@ void glLoop(void(*graphics_loop)())
 		//Clear color buffer  
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glClearColor(.5,.5,.5,1.);
+		glClearColor(ambient_color.x, ambient_color.y, ambient_color.z,1.);
 
 		graphics_loop();
 
