@@ -6,7 +6,7 @@ using namespace glm;
 //Cube entity
 Entity cube, cone, cylinder, sphere;
 
-Light lights[1] = { { glm::vec3(0,5,0),glm::vec3(1,1,1),30,0.1,100 } };
+Light lights[1] = { { glm::vec3(0,-5,0),glm::vec3(1,1,1),30,0.1,100 } };
 
 vec3 ambient_color(.1, .1, .1);
 //Window object  
@@ -543,10 +543,10 @@ int initWindow()
 	}
 
 	//Set the GLFW window creation hints - these are optional  
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //Request a specific OpenGL version  
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //Request a specific OpenGL version  
-	//glfwWindowHint(GLFW_SAMPLES, 4); //Request 4x antialiasing  
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //Request a specific OpenGL version  
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //Request a specific OpenGL version  
+	glfwWindowHint(GLFW_SAMPLES, 4); //Request 4x antialiasing  
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  
 
 	//Create a window and create its OpenGL context  
 	window = glfwCreateWindow(width, height, "Test Window", NULL, NULL);
@@ -644,7 +644,7 @@ void glLoop(void(*graphics_loop)())
 		if(fps_on)
 			runFPSControls();
 
-		position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
+		//position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
 
 		//light_pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, 0)) * light_pos;
 
