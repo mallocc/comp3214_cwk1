@@ -6,7 +6,7 @@ using namespace glm;
 //Cube entity
 Entity cube, cone, cylinder, sphere;
 
-Light lights[1] = { { glm::vec3(0,-5,0),glm::vec3(1,1,1),30,0.1,100 } };
+Light lights[1] = { { glm::vec3(5,0,0),glm::vec3(1,1,1),30,0.2,200 } };
 
 vec3 ambient_color(.1, .1, .1);
 //Window object  
@@ -14,7 +14,7 @@ GLFWwindow* window;
 //Shader program
 GLuint 	program_id;
 //Matrix handle to vertex shader
-GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle, eye_handle, ubo;
+GLuint 	mvp_handle, m_handle, v_handle, p_handle, light_handle, eye_handle;
 GLuint light_handles[1][5], ambient_handle;
 
 //Shader paths
@@ -35,7 +35,7 @@ float verticalAngle = 0.0f;
 // Initial Field of View
 float initialFoV = 45.0f;
 //Speed variable
-float speed = 1.0f; // 3 units / second
+float speed = 20.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
@@ -44,6 +44,10 @@ float dt = 0.01;
 bool fps_on = 0;
 //Camera vectors
 glm::vec3 right, up(0, 1, 0), direction;
+
+bool wire_frame = 0;
+
+int test1 = 0;
 
 //Cube vertices count
 const int cube_n = 36;
@@ -87,6 +91,8 @@ GLfloat cube_v_b[] = {
 	1.0f,-1.0f, 1.0f
 };
 
+
+
 std::vector<glm::vec3> generate_cube()
 {
 	std::vector<glm::vec3> v;
@@ -94,7 +100,6 @@ std::vector<glm::vec3> generate_cube()
 		v.push_back(glm::vec3(cube_v_b[i*3], cube_v_b[i * 3+1], cube_v_b[i * 3+2]));
 	return v;
 }
-
 std::vector<glm::vec3> generate_cone(int k)
 {
 	std::vector<glm::vec3> v;
@@ -123,7 +128,6 @@ std::vector<glm::vec3> generate_cone(int k)
 	}
 	return v;
 }
-
 std::vector<glm::vec3> generate_cylinder(int k)
 {
 	std::vector<glm::vec3> v;
@@ -169,7 +173,6 @@ std::vector<glm::vec3> generate_cylinder(int k)
 	}
 	return v;
 }
-
 std::vector<glm::vec3> generate_sphere(int lats, int longs)
 {
 	std::vector<glm::vec3> v;
@@ -209,7 +212,6 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 
 	return v;
 }
-
 std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> n;
@@ -222,6 +224,7 @@ std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
 	}
 	return n;
 }
+
 
 Particle::Particle(vec3 p, vec3 v)
 {
@@ -241,16 +244,12 @@ Entity::Entity(glm::vec3 * v, glm::vec3 * c, int _n)
 }
 void Entity::init()
 {
-	
-
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
+	
 	glGenBuffers(1, &vert_b);
-
 	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
-	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);	
 	// 1rst attribute buffer : vertices
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
@@ -266,7 +265,6 @@ void Entity::init()
 	glGenBuffers(1, &colour_b);
 	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
 	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
-
 	// 2nd attribute buffer : colors
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
@@ -282,12 +280,11 @@ void Entity::init()
 	glGenBuffers(1, &normal_b);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
 	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), n_b, GL_STATIC_DRAW);
-
-	// 2nd attribute buffer : colors
+	// 3rd attribute buffer : nromals
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
 	glVertexAttribPointer(
-		2,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		2,                                // attribute. No particular reason for 2, but must match the layout in the shader.
 		3,                                // size
 		GL_FLOAT,                         // type
 		GL_FALSE,                         // normalized?
@@ -299,6 +296,10 @@ void Entity::init()
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+
+	glFlush();
+
+	printf("%i %i %i\n", vert_b, colour_b, normal_b);
 }
 void Entity::draw()
 {
@@ -321,9 +322,10 @@ void Entity::draw()
 
 	glBindVertexArray(vao);
 	// Draw the triangle !
-	glDrawArrays(GL_TRIANGLES, 0, n * sizeof(glm::vec3)); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(0);
 }
+
 
 //Randomises the colour buffer passed
 void random_colour_buffer(glm::vec3 ** buffer_data, int n)
@@ -458,6 +460,7 @@ void init_objects()
 	cube.n_b = generate_normals(v).data();
 	cube.v_b = v.data();
 	cube.n = v.size();
+	//printf("%i", cube.n);
 	random_colour_buffer(&cube.c_b, cube.n);
 	cube.p.pos = glm::vec3(0, 0., 0);
 	cube.init();
@@ -491,7 +494,6 @@ void init_objects()
 	sphere.init();
 
 }
-
 //Key input callback  
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -518,8 +520,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) {
 		fps_on = !fps_on;
 	}
-}
 
+	// FPS toggle
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		wire_frame = !wire_frame;
+	}
+	// FPS toggle
+	if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) {
+		test1++;
+	}
+}
 //Custom graphics loop
 void loop()
 {
@@ -641,12 +651,15 @@ void glLoop(void(*graphics_loop)())
 	//Main Loop  
 	do
 	{
+		direction = -glm::normalize(position);
+		right = glm::normalize(glm::cross(direction, up));
+
 		if(fps_on)
 			runFPSControls();
 
 		//position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
 
-		//light_pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, 0)) * light_pos;
+		//lights[0].pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, 0)) * lights[0].pos;
 
 		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);

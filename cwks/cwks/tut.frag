@@ -1,5 +1,5 @@
-#version 400 core
-precision highp float;
+#version 330
+//precision highp float;
 
 //out vec3 color;
 //uniform vec3 fragmentColor;
@@ -31,8 +31,8 @@ void main()
 	vec3 l = normalize(light_vec);              //light direction
 	vec3 v = normalize(vViewPosition);            //eye direction
 
-	float specular = pow(clamp(dot(v, l),0,1), shininess) * specular_scale * falloff;
-	vec3 diffuse = diffuse_color * clamp(dot(vNormal, -l),0,1) * falloff;	
+	float specular = pow(clamp(dot(v, -l),0,1), shininess) * specular_scale * falloff;
+	vec3 diffuse = diffuse_color * clamp(dot(vNormal, l),0,1) * falloff;	
 
 	vec3 colour = color * (diffuse + ambient_color) + specular;
 
