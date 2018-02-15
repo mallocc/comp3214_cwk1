@@ -3,8 +3,8 @@
 int main(void)
 {
 
-	cw1shan_main();
-
+	//cw1shan_main();
+	cwk1_main();
 	//testGL();
 
 	getc(stdin);
