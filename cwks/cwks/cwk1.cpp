@@ -6,9 +6,11 @@ using namespace glm;
 //Cube entity
 Entity cube, cone, cylinder, sphere;
 
-Light lights[1] = { { glm::vec3(5,0,0),glm::vec3(1,1,1),30,0.2,200 } };
+std::vector<Entity> spheres;
 
-vec3 ambient_color(.1, .1, .1);
+Light lights[1] = { { glm::vec3(10,0,0),glm::vec3(0,1,1),50,0.5,200 } };
+
+vec3 ambient_color(.3, .3, .3);
 //Window object  
 GLFWwindow* window;
 //Shader program
@@ -27,7 +29,7 @@ glm::mat4 Projection, View;
 //Window dimensions
 const int width = 1280, height = 720;
 // position
-glm::vec3 position = glm::vec3(0, 0, 10);
+glm::vec3 position = glm::vec3(0, 0, 30);
 // horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // vertical angle : 0, look at the horizon
@@ -39,7 +41,7 @@ float speed = 20.0f; // 3 units / second
 //Mouse sensitivity
 float mouseSpeed = 0.1f;
 //Time delta
-float dt = 0.01;
+float dt = 0.05;
 //FPS toggle
 bool fps_on = 0;
 //Camera vectors
@@ -456,42 +458,56 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 //Initilise custom objects
 void init_objects()
 {
-	std::vector<vec3> v = generate_cube();
-	cube.n_b = generate_normals(v).data();
-	cube.v_b = v.data();
-	cube.n = v.size();
-	//printf("%i", cube.n);
-	random_colour_buffer(&cube.c_b, cube.n);
-	cube.p.pos = glm::vec3(0, 0., 0);
-	cube.init();
+	//std::vector<vec3> v = generate_cube();
+	//cube.n_b = generate_normals(v).data();
+	//cube.v_b = v.data();
+	//cube.n = v.size();
+	////printf("%i", cube.n);
+	//random_colour_buffer(&cube.c_b, cube.n);
+	//cube.p.pos = glm::vec3(0, 0., 0);
+	//cube.init();
 
-	std::vector<vec3> v1 = generate_cone(100);
-	cone.n_b = generate_normals(v1).data();
-	cone.v_b = v1.data();
-	cone.n = v1.size();
-	random_colour_buffer(&cone.c_b, cone.n);
-	cone.p.pos = glm::vec3(0, 2., 0);
-	cone.rotation = vec3(1, 0, 0);
-	cone.theta = 3.141596/2;
-	cone.init();
+	//std::vector<vec3> v1 = generate_cone(100);
+	//cone.n_b = generate_normals(v1).data();
+	//cone.v_b = v1.data();
+	//cone.n = v1.size();
+	//random_colour_buffer(&cone.c_b, cone.n);
+	//cone.p.pos = glm::vec3(0, 2., 0);
+	//cone.p.vel = glm::vec3(0.1, 0, 0);
+	//cone.rotation = vec3(1, 0, 0);
+	//cone.theta = 3.141596/2;
+	//cone.init();
 
-	std::vector<vec3> v2 = generate_cylinder(100);
-	cylinder.n_b = generate_normals(v2).data();
-	cylinder.v_b = v2.data();
-	cylinder.n = v2.size();
-	random_colour_buffer(&cylinder.c_b, cylinder.n);
-	cylinder.p.pos = glm::vec3(0, -1, 0);
-	cylinder.rotation = vec3(1, 0, 0);
-	cylinder.theta = 3.141596 / 2;
-	cylinder.init();
+	//std::vector<vec3> v2 = generate_cylinder(100);
+	//cylinder.n_b = generate_normals(v2).data();
+	//cylinder.v_b = v2.data();
+	//cylinder.n = v2.size();
+	//random_colour_buffer(&cylinder.c_b, cylinder.n);
+	//cylinder.p.pos = glm::vec3(0, -1, 0);
+	//cylinder.rotation = vec3(1, 0, 0);
+	//cylinder.theta = 3.141596 / 2;
+	//cylinder.init();
 
-	std::vector<vec3> v3 = generate_sphere(30,31);
-	sphere.n_b = generate_normals(v3).data();
-	sphere.v_b = v3.data();
-	sphere.n = v3.size();
-	random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
-	sphere.p.pos = glm::vec3(0, -3, 0);
-	sphere.init();
+	//std::vector<vec3> v3 = generate_sphere(30,31);
+	//sphere.n_b = generate_normals(v3).data();
+	//sphere.v_b = v3.data();
+	//sphere.n = v3.size();
+	//random_alpha_colour_buffer(&sphere.c_b, sphere.n, glm::vec3(1.,0.6,0.3));
+	//sphere.p.pos = glm::vec3(0, -3, 0);
+	//sphere.init();
+	int dist = 15;
+	for (int i = 0; i < 100; ++i)
+	{
+		std::vector<vec3> v3 = generate_cube();//generate_sphere(16, 16);
+		Entity s;
+		s.n_b = generate_normals(v3).data();
+		s.v_b = v3.data();
+		s.n = v3.size();
+		generate_colour_buffer(&s.c_b, s.n, glm::vec3(.5, .5, .5));
+		s.p.pos = glm::vec3(randf()*dist- dist/2, randf()*dist - dist/2, randf() * dist - dist/2);
+		s.init();
+		spheres.push_back(s);
+	}
 
 }
 //Key input callback  
@@ -533,10 +549,17 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //Custom graphics loop
 void loop()
 {
-	//cube.draw();
-	cone.draw();
-	cylinder.draw();
-	sphere.draw();
+	//cone.p.update(dt);
+	//cylinder.p.update(dt);
+	//sphere.p.update(dt);
+
+	////cube.draw();
+	//cone.draw();
+	//cylinder.draw();
+	//sphere.draw();
+
+	for (Entity e : spheres)
+		e.draw();
 }
 
 
@@ -659,7 +682,7 @@ void glLoop(void(*graphics_loop)())
 
 		//position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
 
-		//lights[0].pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, 0)) * lights[0].pos;
+		lights[0].pos = glm::quat(glm::vec3(0.05 * dt, 0.1*dt, -0.05*dt)) * lights[0].pos;
 
 		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
