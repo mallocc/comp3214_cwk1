@@ -154,6 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cw1shan.cpp" />
     <ClCompile Include="cwk1.cpp" />
     <ClCompile Include="cwk2.cpp" />
     <ClCompile Include="cwkp.cpp" />
@@ -161,6 +162,7 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cw1shan.h" />
     <ClInclude Include="cwk1.h" />
     <ClInclude Include="cwk2.h" />
     <ClInclude Include="cwkp.h" />
@@ -170,6 +172,8 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shader.frag" />
+    <None Include="shader.vert" />
     <None Include="tri.geom" />
     <None Include="tut.frag" />
     <None Include="tut.vert" />

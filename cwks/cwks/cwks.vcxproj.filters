@@ -33,6 +33,9 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cw1shan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cwk1.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GLTEST.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cw1shan.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -86,6 +92,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="tut.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shader.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shader.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

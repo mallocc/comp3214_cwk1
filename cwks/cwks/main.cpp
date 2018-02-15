@@ -3,7 +3,7 @@
 int main(void)
 {
 
-	cwk1_main();
+	cw1shan_main();
 
 	//testGL();
 
