@@ -233,3 +233,56 @@ int generate_cone2(GLfloat ** buffer_data)
 	}
 	return i;
 }
+
+struct Entity_Generator
+{
+	Entity clone;
+	std::vector<Entity> entities;
+	int max;
+	glm::vec3 * pos;
+	bool gen_on = 1;
+
+	Entity_Generator() {};
+
+	Entity_Generator(Entity clone_, int max_, glm::vec3 * pos_)
+	{
+		max = max_;
+		pos = pos_;
+		clone = clone_;
+		Entity e;
+		for (int i = 0; i < max; ++i)
+		{
+			e = clone.clone();
+			e.p.pos = *pos;
+			e.p.vel += glm::vec3(randf(), randf(), randf());
+			entities.push_back(e);
+			//Print(e.p.vel);
+			std::cout << &e << std::endl;
+		}
+		for (Entity e : entities)
+			std::cout << &e << std::endl;
+
+	}
+
+	void update(float dt)
+	{
+		for (Entity e : entities)
+		{
+			e.p.update(dt);
+			if(0)
+			if (e.p.life < 0)
+			{
+				e.p.pos = *pos;
+				e.p.life = e.p.life_time;
+			}
+		}
+	}
+
+	void draw()
+	{
+		for (Entity e : entities)
+			e.draw();
+	}
+
+
+};

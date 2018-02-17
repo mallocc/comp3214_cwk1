@@ -4,7 +4,7 @@
 using namespace glm;
 
 //colours
-glm::vec3 WHITE(1, 1, 1), BLACK(0,0,0), GREY(.5,.5,.5);
+glm::vec3 WHITE(1, 1, 1), BLACK(0,0,0), GREY(.5,.5,.5), OFF_BLACK(.1,.1,.1);
 
 //entities
 Entity cube, cone, cylinder, sphere, ground;
@@ -16,7 +16,7 @@ Composite_Entity rocket;
 //light
 Light lights = { glm::vec3(100,100,0),glm::vec3(1,1,1),10000,0.5,200 };
 
-vec3 ambient_color(.3, .3, .3);
+vec3 ambient_color = OFF_BLACK;
 
 //Window object  
 GLFWwindow* window;
@@ -246,17 +246,6 @@ std::vector<glm::vec3> generate_rect()
 	return n;
 }
 
-//praticle struct bodies
-Particle::Particle(vec3 p, vec3 v)
-{
-	pos = p;
-	vel = v;
-}
-void Particle::update(float dt)
-{
-	pos += vel * dt;
-}
-
 //entity struct bodies
 void Entity::init()
 {
@@ -333,15 +322,21 @@ void Entity::draw()
 	light_handles[3].load(lights.shininess);
 	light_handles[4].load(lights.specular_scale);
 
-	glBindVertexArray(vao);
-	glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n);
-	glBindVertexArray(0);
+	if (p.life > 0)
+	{
+		glBindVertexArray(vao);
+		glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n);
+		glBindVertexArray(0);
+	}
 }
 void Entity::draw_array(int wire_frame)
 {
-	glBindVertexArray(vao);
-	glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n); 
-	glBindVertexArray(0);
+	if (p.life > 0) 
+	{
+		glBindVertexArray(vao);
+		glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n);
+		glBindVertexArray(0);
+	}
 }
 
 //composite entity bodies
@@ -588,19 +583,19 @@ void init_objects()
 	ground.scale *= 10.0f;
 	ground.init();
 
-	int dist = 15;
-	for (int i = 0; i < 0; ++i)
-	{
-		std::vector<vec3> v3 = generate_cube();//generate_sphere(16, 16);
-		Entity s;
-		s.n_b = generate_normals(v3).data();
-		s.v_b = v3.data();
-		s.n = v3.size();
-		generate_colour_buffer(&s.c_b, s.n, glm::vec3(.5, .5, .5));
-		s.p.pos = glm::vec3(randf()*dist- dist/2, randf()*dist - dist/2, randf() * dist - dist/2);
-		s.init();
-		spheres.push_back(s);
-	}
+	//int dist = 15;
+	//for (int i = 0; i < 100; ++i)
+	//{
+	//	std::vector<vec3> v3 = generate_cube();//generate_sphere(16, 16);
+	//	Entity s;
+	//	s.n_b = generate_normals(v3).data();
+	//	s.v_b = v3.data();
+	//	s.n = v3.size();
+	//	generate_colour_buffer(&s.c_b, s.n, glm::vec3(.5, .5, .5));
+	//	s.p.pos = glm::vec3(randf()*dist- dist/2, randf()*dist - dist/2, randf() * dist - dist/2);
+	//	s.init();
+	//	spheres.push_back(s);
+	//}
 
 }
 //Key input callback  
@@ -648,20 +643,9 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //Custom graphics loop
 void loop()
 {
-	//cone.p.update(dt);
-	//cylinder.p.update(dt);
-	//sphere.p.update(dt);
-
-	////cube.draw();
-	//cone.draw();
-	//cylinder.draw();
-	//sphere.draw();
-
-	//for (Entity e : spheres)
-		//e.draw();
 
 	// update and draw rocket model
-	rocket.p.vel += glm::vec3(0,.01,0) * dt;
+	rocket.p.vel += glm::vec3(0,0.01,0) * dt;
 	rocket.p.update(dt);
 	rocket.draw(wire_frame);
 	eye_direction = rocket.p.pos;

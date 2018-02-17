@@ -19,6 +19,13 @@
 
 int cwk1_main();
 
+//Returns random float
+inline float		randf()
+{
+	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+}
+
+
 //// STUCTS ////
 
 struct Particle
@@ -26,11 +33,29 @@ struct Particle
 
 	glm::vec3 pos, vel;
 
+	float life_time=1, life=life_time;
+
+	int mortal = 0;
+
 	Particle() {}
 
-	Particle(glm::vec3 p, glm::vec3 v);
+	Particle(glm::vec3 p, glm::vec3 v)
+	{
+		pos = p;
+		vel = v;
+	}
 
-	void update(float dt);
+	void set_life_time(int l)
+	{
+		life_time = life = l;
+		mortal = 1;
+	}
+
+	void update(float dt)
+	{
+		pos += vel * dt;
+		life -= mortal;
+	}
 };
 
 struct Entity
@@ -48,10 +73,30 @@ public:
 
 	Entity() {}
 
+	Entity clone()
+	{
+		Entity e;
+		e.vert_b = vert_b;
+		e.colour_b = colour_b;
+		e.normal_b = normal_b;
+		e.vao = vao;
+		e.v_b = v_b;
+		e.c_b = c_b;
+		e.n_b = n_b;
+		e.rotation = rotation;
+		e.theta = theta;
+		e.scale = scale;
+		e.n = n;
+		e.p = p;
+		return e;
+	}
+
 	void init();
 	void draw_array(int wire_frame);
 	void draw();
 };
+
+
 
 struct Composite_Entity
 {
@@ -270,8 +315,3 @@ struct Screen
 	}
 };
 
-//Returns random float
-inline float		randf()
-{
-	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-}
