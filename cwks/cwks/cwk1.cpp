@@ -9,7 +9,7 @@ using namespace glm;
 #define SCREEN_D 3
 #define SCREEN_E 4
 
-int screen_number = 0;
+int screen_number = SCREEN_B;
 
 //colours
 glm::vec3 
@@ -40,6 +40,11 @@ GLFWwindow* window;
 //Shader program
 GLuint
 	program_id,
+	program_a,
+	program_b,
+	program_c,
+	program_d,
+	program_e,
 //handles to shader
 	m_handle,
 	v_handle,
@@ -82,8 +87,8 @@ const int
 // eye position
 glm::vec3 
 	//Camera vectors
-	position                    = glm::vec3(0, 0, 50),
-	eye_direction               = glm::vec3(0, -1, 0),
+	position                    = glm::vec3(0, 0, 5),
+	eye_direction               = glm::vec3(0, 0, 0),
 	right, 
 	up(0, 1, 0), 
 	direction,
@@ -540,6 +545,26 @@ void reset_rocket()
 	rocket.p.vel = glm::vec3();
 }
 
+void setup_program_handles()
+{
+	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
+
+	mat4_handles[0] = Var_Handle("M");
+	mat4_handles[1] = Var_Handle("V");
+	mat4_handles[2] = Var_Handle("P");
+	for (int i = 0; i < 3; ++i)
+		mat4_handles[i].init(program_id);
+
+	light_handles[0] = Var_Handle("light", &lights.pos);
+	light_handles[1] = Var_Handle("diffuse_color", &lights.color);
+	light_handles[2] = Var_Handle("brightness", &lights.brightness);
+	light_handles[3] = Var_Handle("shininess", &lights.shininess);
+	light_handles[4] = Var_Handle("specular_scale", &lights.specular_scale);
+
+	for (int i = 0; i < 5; ++i)
+		light_handles[i].init(program_id);
+}
+
 //Initilise custom objects
 void init_objects()
 {
@@ -551,6 +576,16 @@ void init_objects()
 	//random_colour_buffer(&cube.c_b, cube.n);
 	//cube.p.pos = glm::vec3(0, 0., 0);
 	//cube.init();
+
+	std::vector<vec3> v = generate_sphere(30, 31);
+	sphere_a.n_b = generate_normals(v).data();
+	sphere_a.v_b = v.data();
+	sphere_a.n = v.size();
+	generate_colour_buffer(&sphere_a.c_b, sphere_a.n, WHITE);
+	sphere_a.p.pos = glm::vec3(0, 0, 0);
+	sphere_a.rotation = vec3(1, 0, 0.5);
+	sphere_a.init();
+
 
 	// setup rocket model shapes
 
@@ -643,18 +678,30 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			// changing screen
 		case GLFW_KEY_A:
 			screen_number = SCREEN_A;
+			glUseProgram(program_a);
+			position = vec3(0, 0, 5);
+			eye_direction = vec3(0, 0, 0);
 			break;
 		case GLFW_KEY_B:
 			screen_number = SCREEN_B;
+			glUseProgram(program_b);
+			position = vec3(0, 0, 5);
+			eye_direction = vec3(0, 0, 0);
 			break;
 		case GLFW_KEY_C:
 			screen_number = SCREEN_C;
+			glUseProgram(program_c);
+			position = vec3(0, 0, 50);
+			eye_direction = vec3(0, 0, 0);
+			reset_rocket();
 			break;
 		case GLFW_KEY_D:
 			screen_number = SCREEN_D;
+			glUseProgram(program_d);
 			break;
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
+			glUseProgram(program_e);
 			break;
 
 			//other
@@ -696,8 +743,11 @@ void loop()
 	{
 	case SCREEN_A:
 		sphere_a.draw(1);
+		sphere_a.theta += dt / 10.0f;
 		break;
 	case SCREEN_B:
+		sphere_a.draw(0);
+		position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
 		break;
 	case SCREEN_C:
 		// update and draw rocket model
@@ -716,25 +766,6 @@ void loop()
 }
 
 
-void setup_program_handles()
-{
-	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
-
-	mat4_handles[0] = Var_Handle("M");
-	mat4_handles[1] = Var_Handle("V");
-	mat4_handles[2] = Var_Handle("P");
-	for (int i = 0; i < 3; ++i)
-		mat4_handles[i].init(program_id);
-
-	light_handles[0] = Var_Handle("light", &lights.pos);
-	light_handles[1] = Var_Handle("diffuse_color", &lights.color);
-	light_handles[2] = Var_Handle("brightness", &lights.brightness);
-	light_handles[3] = Var_Handle("shininess", &lights.shininess);
-	light_handles[4] = Var_Handle("specular_scale", &lights.specular_scale);
-
-	for (int i = 0; i < 5; ++i)
-		light_handles[i].init(program_id);
-}
 //GL window initialose
 int initWindow()
 {
@@ -781,7 +812,12 @@ int initWindow()
 	}
 
 	program_id = LoadShaders(vertex_shader, fragment_shader);
-	glUseProgram(program_id);
+	program_a = LoadShaders(vertex_shader_a, fragment_shader_a);
+	program_b = LoadShaders(vertex_shader_b, fragment_shader_b);
+	program_c = LoadShaders(vertex_shader_c, fragment_shader_c);
+	program_d = LoadShaders(vertex_shader_d, fragment_shader_d);
+	program_e = LoadShaders(vertex_shader_e, fragment_shader_e);
+	glUseProgram(program_b);
 
 	setup_program_handles();
 
