@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 
 #include "opengl.h"
@@ -17,7 +18,7 @@
 #include <chrono>
 #include <thread>
 
-int cwk1_main();
+int old_cwk1_main();
 
 //Returns random float
 inline float		randf()
@@ -33,7 +34,7 @@ struct Particle
 
 	glm::vec3 pos, vel;
 
-	float life_time=1, life=life_time;
+	float life_time = 1, life = life_time;
 
 	int mortal = 0;
 
@@ -64,10 +65,10 @@ private:
 	GLuint vert_b, colour_b, normal_b, vao;
 
 public:
-	glm::vec3 * v_b, * c_b, *n_b;
+	glm::vec3 * v_b, *c_b, *n_b;
 	glm::vec3 rotation = glm::vec3(1, 0, 0);
 	GLfloat theta;
-	glm::vec3 scale = glm::vec3(1,1,1);
+	glm::vec3 scale = glm::vec3(1, 1, 1);
 	int n;
 	Particle p;
 
@@ -93,7 +94,7 @@ public:
 
 	void init();
 	void draw_array(int wire_frame);
-	void draw(int wire_frame);
+	void draw();
 };
 
 struct Composite_Entity
@@ -161,7 +162,7 @@ public:
 		data_f = data;
 		handle_type = FLOAT_HANDLE;
 	}
-	
+
 	void init(GLuint program)
 	{
 		handle = glGetUniformLocation(program, var_name);
@@ -200,6 +201,118 @@ public:
 	const char * get_handle_name()
 	{
 		return var_name;
+	}
+};
+
+struct Screen
+{
+	//Shader program
+	GLuint 	program_id;
+	std::vector<Var_Handle> handles;
+	std::vector<Entity> entities;
+	std::vector<Composite_Entity> comp_entities;
+
+	int width, height;
+
+	//vars
+	glm::mat4 projection, view;
+	Var_Handle
+		p_handle = Var_Handle("P", &projection),
+		v_handle = Var_Handle("V", &view),
+		m_handle = Var_Handle("M");
+	glm::vec3 eye_pos, eye_direction, up;
+
+	float dt;
+
+	int wire_frame = 0;
+
+	Screen() {};
+
+	Screen(
+		GLuint program_id_,
+		std::vector<Var_Handle> handles_,
+		std::vector<Entity> entities_,
+		std::vector<Composite_Entity> comp_entities_,
+		int width_,
+		int height_,
+		glm::vec3 eye_pos_,
+		glm::vec3 eye_direction_,
+		glm::vec3 up_,
+		float dt_
+	)
+	{
+		program_id = program_id_;
+		handles = handles_;
+		entities = entities_;
+		comp_entities = comp_entities_;
+		width = width_;
+		height = height_;
+		eye_pos = eye_pos_;
+		eye_direction = eye_direction_;
+		up = up_;
+		dt = dt_;
+	}
+
+	void load_handles()
+	{
+		p_handle.load();
+		v_handle.load();
+		for (Var_Handle h : handles)
+			h.load();
+	}
+
+	void init()
+	{
+		glUseProgram(program_id);
+		p_handle.init(program_id);
+		v_handle.init(program_id);
+		for (Var_Handle h : handles)
+			h.init(program_id);
+	}
+
+	void calc_mats()
+	{
+		projection = glm::perspective(
+			glm::radians(45.0f),
+			(float)width / (float)height,
+			0.1f, 1000.0f);
+		view = glm::lookAt(
+			eye_pos,
+			eye_direction,
+			up);
+	}
+
+	void draw()
+	{
+		calc_mats();
+		load_handles();
+		for (Entity e : entities)
+		{
+			glm::mat4 Model = glm::translate(
+				glm::mat4(1.), e.p.pos) *
+				glm::rotate(glm::mat4(1.), e.theta, e.rotation) *
+				glm::scale(glm::mat4(1.), e.scale);
+			m_handle.load(Model);
+			e.draw_array(wire_frame);
+		}
+		for (Composite_Entity e : comp_entities)
+		{
+			glm::mat4 comp_Model = glm::translate(
+				glm::mat4(1.), e.p.pos) *
+				glm::rotate(glm::mat4(1.), e.theta, e.rotation) *
+				glm::scale(glm::mat4(1.), e.scale);
+
+			for (Entity e1 : e.entities)
+			{
+				glm::mat4 Model = glm::translate(
+					glm::mat4(1.), e1.p.pos) *
+					glm::rotate(glm::mat4(1.), e1.theta, e1.rotation) *
+					glm::scale(glm::mat4(1.), e1.scale);
+				Model = comp_Model * Model;
+				m_handle.load(Model);
+				e1.draw_array(wire_frame);
+			}
+		}
 	}
 };
 

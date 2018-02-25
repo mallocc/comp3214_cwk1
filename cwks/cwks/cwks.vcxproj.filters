@@ -88,5 +88,35 @@
     <None Include="tut.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="A.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="A.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="B.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="B.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="C.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="C.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="D.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="D.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="E.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="E.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -102,7 +102,6 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Full</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)\graphics_stuff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -138,7 +137,6 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -170,6 +168,16 @@
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="A.frag" />
+    <None Include="A.vert" />
+    <None Include="B.frag" />
+    <None Include="B.vert" />
+    <None Include="C.frag" />
+    <None Include="C.vert" />
+    <None Include="D.frag" />
+    <None Include="D.vert" />
+    <None Include="E.frag" />
+    <None Include="E.vert" />
     <None Include="tri.geom" />
     <None Include="tut.frag" />
     <None Include="tut.vert" />
