@@ -96,8 +96,6 @@ public:
 	void draw();
 };
 
-
-
 struct Composite_Entity
 {
 	std::vector<Entity> entities;
@@ -226,6 +224,8 @@ struct Screen
 	float dt;
 
 	int wire_frame = 0;
+
+	Screen() {};
 
 	Screen(
 		GLuint program_id_,

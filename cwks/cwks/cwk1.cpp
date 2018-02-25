@@ -3,6 +3,9 @@
 
 using namespace glm;
 
+//screens
+Screen screen1;
+
 //colours
 glm::vec3 WHITE(1, 1, 1), BLACK(0,0,0), GREY(.5,.5,.5), OFF_BLACK(.1,.1,.1);
 
@@ -597,6 +600,7 @@ void init_objects()
 	//	spheres.push_back(s);
 	//}
 
+
 }
 //Key input callback  
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -645,12 +649,13 @@ void loop()
 {
 
 	// update and draw rocket model
-	rocket.p.vel += glm::vec3(0,0.01,0) * dt;
-	rocket.p.update(dt);
-	rocket.draw(wire_frame);
-	eye_direction = rocket.p.pos;
+	//rocket.p.vel += glm::vec3(0,0.01,0) * dt;
+	//rocket.p.update(dt);
+	//rocket.draw(wire_frame);
+	//eye_direction = rocket.p.pos;
 
-	ground.draw();
+	//ground.draw();
+	screen1.draw();
 }
 
 
@@ -731,6 +736,26 @@ int initWindow()
 	glEnable(GL_CULL_FACE);
 
 	init_objects();
+
+	std::vector < Var_Handle> h;
+	for (int i = 0; i < 4; i++)
+		h.push_back(light_handles[i]);
+	std::vector < Entity> e;
+	e.push_back(ground);
+	std::vector < Composite_Entity> ce;
+
+
+	screen1 = Screen(
+		program_id,
+		h,
+		e,
+		ce,
+		width, height,
+		position,
+		eye_direction,
+		up,
+		dt);
+	screen1.init();
 
 }
 //GL graphics loop
