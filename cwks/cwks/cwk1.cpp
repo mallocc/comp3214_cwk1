@@ -240,9 +240,9 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 	float step_lats = 2. * 3.141596 / float(lats);
 	float step_longs = 2. * 3.141596 / float(longs);
 	float Radius = 1., x, y, z;
-	for (float a = step_lats; a <= (2. * 3.141596); a += step_lats)
+	for (float a = step_lats; a <= (2. * 3.141596) + step_lats; a += step_lats)
 	{
-		for (float b = step_longs; b <= (2. * 3.141596); b += step_longs)
+		for (float b = 0; b <= (2. * 3.141596); b += step_longs)
 		{
 			x = Radius * cos(a) * cos(b);
 			y = Radius * cos(a) * sin(b);
@@ -577,7 +577,7 @@ void init_objects()
 	//cube.p.pos = glm::vec3(0, 0., 0);
 	//cube.init();
 
-	std::vector<vec3> v = generate_sphere(30, 31);
+	std::vector<vec3> v = generate_sphere(150, 150);
 	sphere_a.n_b = generate_normals(v).data();
 	sphere_a.v_b = v.data();
 	sphere_a.n = v.size();
