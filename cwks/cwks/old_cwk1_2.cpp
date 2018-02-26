@@ -9,42 +9,53 @@ using namespace glm;
 #define SCREEN_D 3
 #define SCREEN_E 4
 
-int screen_number = SCREEN_A;
+int screen_number = SCREEN_B;
 
 //colours
 glm::vec3 
 	WHITE(1, 1, 1), 
 	BLACK(0,0,0), 
 	GREY(.5,.5,.5), 
-	OFF_BLACK(.1,.1,.1),
-	ambient_color = OFF_BLACK;
+	OFF_BLACK(.1,.1,.1);
 
+//entities
+Entity 
+	cube, 
+	cone, 
+	cylinder, 
+	sphere, 
+	ground,
+	sphere_a;
 
-Entity sphere, ground;
+std::vector<Entity> 
+	spheres;
 
-Composite_Entity rocket;
+// composite entities
+Composite_Entity 
+	rocket;
+
 
 //Window object  
 GLFWwindow* window;
 //Shader program
 GLuint
-	program_id,
-	program_a,
-	program_b,
-	program_c,
-	program_d,
-	program_e,
-	current_program,
+program_id,
+program_a,
+program_b,
+program_c,
+program_d,
+program_e,
+current_program,
 //handles to shader
 	m_handle,
 	v_handle,
 	p_handle;
 
 // self contained custom variable handlers
-Var_Handle
-mat4_handles[3],
-light_handles[5],
-ambient_color_handle;
+Var_Handle 
+	mat4_handles[3], 
+	light_handles[5], 
+	ambient_color_handle;
 
 //Shader paths
 const char
@@ -54,8 +65,8 @@ const char
 	*fragment_shader_a = "A.frag",
 	*vertex_shader_b = "B.vert",
 	*fragment_shader_b = "B.frag",
-	*vertex_shader_c = "B.vert",
-	*fragment_shader_c = "B.frag",
+	*vertex_shader_c = "tut.vert",
+	*fragment_shader_c = "tut.frag",
 	*vertex_shader_d = "D.vert",
 	*fragment_shader_d = "D.frag",
 	*vertex_shader_e = "E.vert",
@@ -66,20 +77,25 @@ glm::mat4
 	Projection, 
 	View;
 
+//light
+Light lights = { glm::vec3(100,100,0),glm::vec3(1,1,1),10000,0.5,200 };
+
+
 //Window dimensions
 const int 
 	width                       = 1280, 
 	height                      = 720;
 // eye position
-glm::vec3
+glm::vec3 
 	//Camera vectors
-	eye_position                = glm::vec3(0, 0, 5),
+	position                    = glm::vec3(0, 0, 5),
 	eye_direction               = glm::vec3(0, 0, 0),
-	right,
-	up(0, 1, 0),
-	direction;
+	right, 
+	up(0, 1, 0), 
+	direction,
+	ambient_color               = OFF_BLACK;
 
-	float 
+float 
 	horizontalAngle             = 3.14f,
 	verticalAngle               = 0.0f,
 	// Initial Field of View
@@ -89,7 +105,7 @@ glm::vec3
 	// Mouse sensitivity
 	mouseSpeed                  = 0.1f,
 	// Time delta
-	dt                          = 0.01;
+	dt                          = 0.05;
 	// toggles
 bool 
 	fps_on                      = 0,
@@ -97,7 +113,6 @@ bool
 
 int test1                       = 0;
 
-Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),50,0.9,500 };
 
 //shape generators non indexed triangles
 //Cube vertex data array
@@ -281,6 +296,121 @@ std::vector<glm::vec3> generate_rect()
 	return n;
 }
 
+//entity struct bodies
+void Entity::init()
+{
+	GLuint vertexLoc = glGetAttribLocation(current_program, "vertexPosition_modelspace");
+	GLuint colorLoc = glGetAttribLocation(current_program, "vertexColor");
+	GLuint normalLoc = glGetAttribLocation(current_program, "vertexNormal");
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	
+	glGenBuffers(1, &vert_b);
+	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), v_b, GL_STATIC_DRAW);	
+	// 1rst attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vert_b);
+	glVertexAttribPointer(
+		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
+		3,                  // size
+		GL_FLOAT,           // type
+		GL_FALSE,           // normalized?
+		0,                  // stride
+		(void*)0            // array buffer offset
+	);
+
+	glGenBuffers(1, &colour_b);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), c_b, GL_STATIC_DRAW);
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, colour_b);
+	glVertexAttribPointer(
+		1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
+	glGenBuffers(1, &normal_b);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
+	glBufferData(GL_ARRAY_BUFFER, n * sizeof(glm::vec3), n_b, GL_STATIC_DRAW);
+	// 3rd attribute buffer : nromals
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, normal_b);
+	glVertexAttribPointer(
+		2,                                // attribute. No particular reason for 2, but must match the layout in the shader.
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
+	glBindVertexArray(0);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+
+	glFlush();
+
+	printf("%i %i %i\n", vert_b, colour_b, normal_b);
+}
+void Entity::draw(int wire_frame)
+{
+	glm::mat4 Model = glm::translate(glm::mat4(1.), p.pos) * glm::rotate(glm::mat4(1.),theta,rotation) * glm::scale(glm::mat4(1.),scale);
+	glm::mat4 mvp = Projection * View * Model;
+	mat4_handles[0].load(Model);
+	mat4_handles[1].load(View);
+	mat4_handles[2].load(Projection);
+	
+	ambient_color_handle.load();
+
+	for (Var_Handle v : light_handles)
+		v.load();
+
+	draw_array(wire_frame);
+}
+void Entity::draw_array(int wire_frame)
+{
+	if (p.life > 0) 
+	{
+		glBindVertexArray(vao);
+		glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, n);
+		glBindVertexArray(0);
+		glFinish();
+	}
+}
+
+//composite entity bodies
+void Composite_Entity::draw(int wire_frame)
+{
+	glm::mat4 comp_Model = glm::translate(glm::mat4(1.), p.pos) * glm::rotate(glm::mat4(1.), theta, rotation) * glm::scale(glm::mat4(1.), scale);
+	mat4_handles[1].load(View);
+	mat4_handles[2].load(Projection);
+
+	ambient_color_handle.load();
+
+	for(Var_Handle v : light_handles)
+		v.load();
+
+	for (Entity e : entities)
+	{
+		glm::mat4 Model = glm::translate(glm::mat4(1.), e.p.pos) * glm::rotate(glm::mat4(1.), e.theta, e.rotation);
+		Model = comp_Model * Model;
+		mat4_handles[0].load(Model);
+		e.draw_array(wire_frame);
+	}
+}
+void Composite_Entity::add(Entity e)
+{
+	entities.push_back(e);
+}
+
 //Randomises the colour buffer passed
 void random_colour_buffer(glm::vec3 ** buffer_data, int n)
 {
@@ -302,6 +432,7 @@ void generate_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
 	for (int v = 0; v < n; v++)
 		(*buffer_data)[v] = colour;
 }
+
 //Randomises the colour buffer passed
 void random_alpha_uniform_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour1,glm::vec3 colour2)
 {
@@ -309,103 +440,7 @@ void random_alpha_uniform_colour_buffer(glm::vec3 ** buffer_data, int n, glm::ve
 	for (int v = 0; v < n; v++)
 		(*buffer_data)[v] = (colour1 + (colour2 - colour1)*randf());
 }
-//Randomises the colour buffer passed
-std::vector<vec3> generate_colour_buffer(glm::vec3 colour, int n)
-{
-	std::vector<vec3> v;
-	for (int i = 0; i < n; i++)
-		v.push_back(colour);
-	return v;
-}
-std::vector<Vertex> pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n)
-{
-	std::vector<Vertex> object;
-	for (int i = 0; i < v->size(); ++i)
-	{
-		Vertex vert;
-		vert.position = (*v)[i];
-		vert.color = (*c)[i];
-		vert.normal = (*n)[i];
-		object.push_back(vert);
-	}
-	return object;
-}
 
-void Entity::init()
-{
-	Vertex * d = data.data();
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	glGenBuffers(1, &buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(struct Vertex), d, GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
-		(const GLvoid*)offsetof(struct Vertex, position));
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
-		(const GLvoid*)offsetof(struct Vertex, color));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
-		(const GLvoid*)offsetof(struct Vertex, normal));
-	glEnableVertexAttribArray(2);
-	glBindVertexArray(0);
-	glFlush();
-}
-void Entity::draw(int wire_frame)
-{
-	glm::mat4 Model = 
-		glm::translate(glm::mat4(1.), p.pos) * 
-		glm::rotate(glm::mat4(1.), theta, rotation) * 
-		glm::scale(glm::mat4(1.), scale);
-	mat4_handles[0].load(Model);
-	mat4_handles[1].load();
-	mat4_handles[2].load();
-
-	ambient_color_handle.load();
-
-	for (Var_Handle v : light_handles)
-		v.load();
-
-	draw_array(wire_frame);
-}
-void Entity::draw_array(int wire_frame)
-{
-	if (p.life > 0)
-	{
-		glBindVertexArray(vao);
-		glDrawArrays(wire_frame ? GL_LINE_LOOP : GL_TRIANGLES, 0, data.size());
-		glBindVertexArray(0);
-		glFinish();
-	}
-}
-void Composite_Entity::init()
-{
-	for (Entity e : entities)
-		e.init();
-}
-void Composite_Entity::draw(int wire_frame)
-{
-	glm::mat4 comp_Model = glm::translate(glm::mat4(1.), p.pos) * glm::rotate(glm::mat4(1.), theta, rotation) * glm::scale(glm::mat4(1.), scale);
-	mat4_handles[1].load();
-	mat4_handles[2].load();
-
-	ambient_color_handle.load();
-
-	for (Var_Handle v : light_handles)
-		v.load();
-
-	for (Entity e : entities)
-	{
-		glm::mat4 Model = glm::translate(glm::mat4(1.), e.p.pos) * glm::rotate(glm::mat4(1.), e.theta, e.rotation);
-		Model = comp_Model * Model;
-		mat4_handles[0].load(Model);
-		e.draw_array(wire_frame);
-	}
-}
-void Composite_Entity::add(Entity e)
-{
-	entities.push_back(e);
-}
 
 //Error callback  
 static void error_callback(int error, const char* description)
@@ -515,16 +550,15 @@ void reset_rocket()
 	rocket.p.vel = glm::vec3();
 }
 
-void setup_program_handles(GLuint prog)
+void setup_program_handles()
 {
 	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
-	ambient_color_handle.init(prog);
 
 	mat4_handles[0] = Var_Handle("M");
-	mat4_handles[1] = Var_Handle("V", &View);
-	mat4_handles[2] = Var_Handle("P", &Projection);
+	mat4_handles[1] = Var_Handle("V");
+	mat4_handles[2] = Var_Handle("P");
 	for (int i = 0; i < 3; ++i)
-		mat4_handles[i].init(prog);
+		mat4_handles[i].init(program_id);
 
 	light_handles[0] = Var_Handle("light", &lights.pos);
 	light_handles[1] = Var_Handle("diffuse_color", &lights.color);
@@ -533,96 +567,110 @@ void setup_program_handles(GLuint prog)
 	light_handles[4] = Var_Handle("specular_scale", &lights.specular_scale);
 
 	for (int i = 0; i < 5; ++i)
-		light_handles[i].init(prog);
+		light_handles[i].init(program_id);
 }
+
 //Initilise custom objects
 void init_objects()
 {
-	// create sphere for a and b
-	std::vector<vec3> v = generate_sphere(100,100);
-	std::vector<vec3> n = generate_normals(v);
-	std::vector<vec3> c = generate_colour_buffer(WHITE,v.size());
-	std::vector<Vertex> o = pack_object(&v, &c, &n);
-	sphere = Entity(
-		o,
-		Particle(glm::vec3(), glm::vec3()),
-		glm::vec3(1, 0,0),
-		glm::radians(90.0f),
-		glm::vec3(1,1,1)
-		);
+	//std::vector<vec3> v = generate_cube();
+	//cube.n_b = generate_normals(v).data();
+	//cube.v_b = v.data();
+	//cube.n = v.size();
+	////printf("%i", cube.n);
+	//random_colour_buffer(&cube.c_b, cube.n);
+	//cube.p.pos = glm::vec3(0, 0., 0);
+	//cube.init();
+
+	std::vector<vec3> v =  generate_sphere(150, 150);
+	sphere_a.n_b = generate_normals(v).data();
+	sphere_a.v_b = v.data();
+	sphere_a.n = v.size();
+	generate_colour_buffer(&sphere_a.c_b, sphere_a.n, WHITE);
+	sphere_a.p.pos = glm::vec3(0, 0, 0);
+	sphere_a.rotation = vec3(1, 0, 0.5);
+	sphere_a.init();
+
+
+	// setup rocket model shapes
+
+	std::vector<vec3> v1 = generate_cone(100);
+	cone.n_b = generate_normals(v1).data();
+	cone.v_b = v1.data();
+	cone.n = v1.size();
+	generate_colour_buffer(&cone.c_b, cone.n, WHITE);
+	cone.p.pos = glm::vec3(0, 0, 0);
+	cone.p.vel = glm::vec3(0, 0, 0);
+	cone.rotation = vec3(1, 0, 0);
+	cone.theta = 3.141596/2;
+	cone.init();
+
+	rocket.add(cone);
+
+	std::vector<vec3> v2 = generate_cylinder(100,5);
+	cylinder.n_b = generate_normals(v2).data();
+	cylinder.v_b = v2.data();
+	cylinder.n = v2.size();
+	generate_colour_buffer(&cylinder.c_b, cylinder.n, WHITE);
+	cylinder.p.pos = glm::vec3(0, -2, 0);
+	cylinder.rotation = vec3(1, 0, 0);
+	cylinder.theta = 3.141596 / 2;
+	cylinder.init();
+
+	rocket.add(cylinder);
+
+	std::vector<vec3> v3 = generate_sphere(30,31);
+	sphere.n_b = generate_normals(v3).data();
+	sphere.v_b = v3.data();
+	sphere.n = v3.size();
+	generate_colour_buffer(&sphere.c_b, sphere.n, WHITE);
+	sphere.p.pos = glm::vec3(0, -7, 0);
 	sphere.init();
 
-	Entity temp;
+	rocket.add(sphere);
 
-	// create rocket
-	// cone
-	v = generate_cone(100);
-	n = generate_normals(v);
-	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
-	temp = Entity(
-		o,
-		Particle(glm::vec3(), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(90.0f),
-		glm::vec3(1, 1, 1)
-	);
-	temp.init();
-	rocket.add(temp);
-	// cone2
-	temp = Entity(
-		o,
-		Particle(glm::vec3(0,-7,0), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(90.0f),
-		glm::vec3(1, 1, 1)
-	);
-	temp.init();
-	rocket.add(temp);
-	// cylinder
-	v = generate_cylinder(100, 5);
-	n = generate_normals(v);
-	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
-	temp = Entity(
-		o,
-		Particle(glm::vec3(0,-2,0), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(90.0f),
-		glm::vec3(1, 1, 1)
-	);
-	temp.init();
-	rocket.add(temp);
-	// sphere
-	v = generate_sphere(100, 100);
-	n = generate_normals(v);
-	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
-	temp = Entity(
-		o,
-		Particle(glm::vec3(0,-7,0), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(0.0f),
-		glm::vec3(1, 1, 1)
-	);
-	temp.init();
-	rocket.add(temp);
+	v1 = generate_cone(100);
+	cone.n_b = generate_normals(v1).data();
+	cone.v_b = v1.data();
+	cone.n = v1.size();
+	generate_colour_buffer(&cone.c_b, cone.n, WHITE);
+	cone.p.pos = glm::vec3(0, -7, 0);
+	cone.p.vel = glm::vec3(0, 0, 0);
+	cone.rotation = vec3(1, 0, 0);
+	cone.theta = 3.141596 / 2;
+	cone.init();
 
-	rocket.scale *= 0.1f;
+	rocket.add(cone);
 
-	//ground
-	v = generate_rect();
-	n = generate_normals(v);
-	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
-	ground = Entity(
-		o,
-		Particle(glm::vec3(0,-1.0f,0), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(0.0f),
-		glm::vec3(10, 1, 10)
-	);
+	rocket.scale *= 1.0f;
+	rocket.p.pos = vec3(0, 0,0);
+
+	// setup ground shape
+
+	std::vector<vec3> v4 = generate_rect();
+	ground.n_b = generate_normals(v4).data();
+	ground.v_b = v4.data();
+	ground.n = v4.size();
+	generate_colour_buffer(&ground.c_b, ground.n, WHITE);
+	ground.p.pos = glm::vec3(0, -10, 0);
+	ground.scale *= 10.0f;
 	ground.init();
+
+	//int dist = 15;
+	//for (int i = 0; i < 100; ++i)
+	//{
+	//	std::vector<vec3> v3 = generate_cube();//generate_sphere(16, 16);
+	//	Entity s;
+	//	s.n_b = generate_normals(v3).data();
+	//	s.v_b = v3.data();
+	//	s.n = v3.size();
+	//	generate_colour_buffer(&s.c_b, s.n, glm::vec3(.5, .5, .5));
+	//	s.p.pos = glm::vec3(randf()*dist- dist/2, randf()*dist - dist/2, randf() * dist - dist/2);
+	//	s.init();
+	//	spheres.push_back(s);
+	//}
+
+
 }
 //Key input callback  
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -636,32 +684,29 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 		case GLFW_KEY_A:
 			screen_number = SCREEN_A;
 			current_program = program_a;
-			eye_position = vec3(0, 0, 5);
+			position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
-			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_B:
 			screen_number = SCREEN_B;
 			current_program = program_b;
-			eye_position = vec3(0, 0, 5);
+			position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
-			setup_program_handles(current_program);		
 			break;
 		case GLFW_KEY_C:
 			screen_number = SCREEN_C;
 			current_program = program_c;
-			eye_position = vec3(0, 0, 5);
+			position = vec3(0, 0, 50);
 			eye_direction = vec3(0, 0, 0);
-			setup_program_handles(current_program);
 			reset_rocket();
 			break;
 		case GLFW_KEY_D:
 			screen_number = SCREEN_D;
-			current_program = program_d;
+			glUseProgram(program_d);
 			break;
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
-			current_program = program_e;
+			glUseProgram(program_e);
 			break;
 
 			//other
@@ -670,21 +715,22 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 		case GLFW_KEY_UP:
-			eye_position += direction * dt * speed;
+			position += direction * dt * speed;
 			break;
 		case GLFW_KEY_DOWN:
-			eye_position -= direction * dt * speed;
+			position -= direction * dt * speed;
 			break;
 		case GLFW_KEY_RIGHT:
-			eye_position += right * dt * speed;
+			position += right * dt * speed;
 			break;
 		case GLFW_KEY_LEFT:
-			eye_position -= right * dt * speed;
+			position -= right * dt * speed;
 			break;
 		case GLFW_KEY_ENTER:
 			fps_on = !fps_on;
 			break;
 		case GLFW_KEY_R:
+			reset_rocket();
 			break;
 		case GLFW_KEY_W:
 			wire_frame = !wire_frame;
@@ -701,16 +747,20 @@ void loop()
 	switch (screen_number)
 	{
 	case SCREEN_A:
-		sphere.draw(1);
+		sphere_a.draw(1);
+		sphere_a.theta += dt / 10.0f;
 		break;
 	case SCREEN_B:
-		sphere.draw(0);
+		sphere_a.draw(0);
+		position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
 		break;
 	case SCREEN_C:
+		// update and draw rocket model
 		rocket.p.vel += glm::vec3(0, 0.01, 0) * dt;
-		eye_direction = rocket.p.pos;
 		rocket.p.update(dt);
 		rocket.draw(wire_frame);
+		eye_direction = rocket.p.pos;
+
 		ground.draw(wire_frame);
 		break;
 	case SCREEN_D:
@@ -772,10 +822,10 @@ int initWindow()
 	program_c = LoadShaders(vertex_shader_c, fragment_shader_c);
 	program_d = LoadShaders(vertex_shader_d, fragment_shader_d);
 	program_e = LoadShaders(vertex_shader_e, fragment_shader_e);
-	current_program = program_a;
+	current_program = program_b;
 
 
-	setup_program_handles(current_program);
+	setup_program_handles();
 
 	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
@@ -797,11 +847,25 @@ void glLoop(void(*graphics_loop)())
 
 		auto start = std::chrono::high_resolution_clock::now();
 
-		direction = -glm::normalize(eye_position);
+		direction = -glm::normalize(position);
 		right = glm::normalize(glm::cross(direction, up));
 
+		//position = glm::quat(glm::vec3(0.05 * dt, -0.1*dt, 0)) * position;
+
+		//lights[0].pos = glm::quat(glm::vec3(0.0 * dt, 0.1*dt, -0.0*dt)) * lights[0].pos;
+
+		// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
 		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
-		View = glm::lookAt(eye_position, eye_direction, up);
+
+		// Or, for an ortho camera :
+		//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+
+		// Camera matrix
+		View = glm::lookAt(
+			position,
+			eye_direction,
+			up
+		);
 
 		//Clear color buffer  
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -812,10 +876,10 @@ void glLoop(void(*graphics_loop)())
 		graphics_loop();
 
 		// check OpenGL error
-		//GLenum err;
-		//while ((err = glGetError()) != GL_NO_ERROR) {
-		//	std::cerr << "OpenGL error: " << err << std::endl;
-		//}
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR) {
+			std::cerr << "OpenGL error: " << err << std::endl;
+		}
 
 
 		//Swap buffers  

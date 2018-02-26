@@ -17,7 +17,6 @@
 #include <chrono>
 #include <thread>
 
-
 int cwk1_main();
 
 //Returns random float
@@ -29,23 +28,14 @@ inline float		randf()
 
 //// STUCTS ////
 
-struct Vertex
-{
-	glm::vec3 position;
-	glm::vec3 color;
-	glm::vec3 normal;
-};
-
 struct Particle
 {
-	glm::vec3 
-		pos, 
-		vel;
-	float 
-		life_time=1, 
-		life=life_time;
-	int 
-		mortal = 0;
+
+	glm::vec3 pos, vel;
+
+	float life_time=1, life=life_time;
+
+	int mortal = 0;
 
 	Particle() {}
 
@@ -71,28 +61,34 @@ struct Particle
 struct Entity
 {
 private:
-	GLuint vao, buffer;
+	GLuint vert_b, colour_b, normal_b, vao;
 
 public:
-	std::vector<Vertex> data;
-	glm::vec3 
-		rotation = glm::vec3(1, 0, 0), 
-		scale = glm::vec3(1, 1, 1);
+	glm::vec3 * v_b, * c_b, *n_b;
+	glm::vec3 rotation = glm::vec3(1, 0, 0);
 	GLfloat theta;
+	glm::vec3 scale = glm::vec3(1,1,1);
+	int n;
 	Particle p;
 
 	Entity() {}
-	Entity(
-		std::vector<Vertex> _data, 
-		Particle _p, 
-		glm::vec3 _rotation, GLfloat _theta, 
-		glm::vec3 _scale)
+
+	Entity clone()
 	{
-		data = _data;
-		p = _p;
-		rotation = _rotation;
-		theta = _theta;
-		scale = _scale;
+		Entity e;
+		e.vert_b = vert_b;
+		e.colour_b = colour_b;
+		e.normal_b = normal_b;
+		e.vao = vao;
+		e.v_b = v_b;
+		e.c_b = c_b;
+		e.n_b = n_b;
+		e.rotation = rotation;
+		e.theta = theta;
+		e.scale = scale;
+		e.n = n;
+		e.p = p;
+		return e;
 	}
 
 	void init();
@@ -103,16 +99,16 @@ public:
 struct Composite_Entity
 {
 	std::vector<Entity> entities;
-	glm::vec3 
-		rotation = glm::vec3(1, 0, 0), 
-		scale = glm::vec3(1, 1, 1);
-	GLfloat theta;
 	Particle p;
-
+	glm::vec3 rotation = glm::vec3(1, 0, 0);
+	GLfloat theta;
+	glm::vec3 scale = glm::vec3(1, 1, 1);
 	Composite_Entity() {};
 
 	void init();
+
 	void draw(int wire_frame);
+
 	void add(Entity e);
 
 };

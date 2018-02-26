@@ -1,4 +1,4 @@
-#version 400 core
+#version 400
 
 in vec3 color;
 
@@ -21,6 +21,7 @@ void main()
 {
 	vec4 light_pos = V * vec4(light,1);
 	vec3 light_vec = light_pos.xyz - vViewPosition;
+
 	float light_distance = length(light_vec);	
 	float falloff = brightness / (light_distance*light_distance);
 
