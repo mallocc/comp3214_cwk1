@@ -293,7 +293,7 @@ std::vector<vec3>				random_colour_buffer(glm::vec3 max, int n)
 {
 	std::vector<vec3> v;
 	for (int i = 0; i < n; i++)
-		v.push_back(glm::vec3(max*randf(), max*randf(), max*randf()));
+		v.push_back(glm::vec3(max.x*randf(), max.y*randf(), max.z*randf()));
 	return v;
 }
 std::vector<vec3>				random_intesity_colour_buffer(glm::vec3 colour, int n)
