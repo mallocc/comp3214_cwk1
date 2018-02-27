@@ -58,30 +58,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tut2.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tut2.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tutorial3.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tutorial3.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tutorial4.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tutorial4.geom">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tutorial4.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="tri.geom">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="tut.frag">
       <Filter>Shaders</Filter>
     </None>

@@ -178,16 +178,8 @@
     <None Include="D.vert" />
     <None Include="E.frag" />
     <None Include="E.vert" />
-    <None Include="tri.geom" />
     <None Include="tut.frag" />
     <None Include="tut.vert" />
-    <None Include="tut2.frag" />
-    <None Include="tut2.vert" />
-    <None Include="tutorial3.frag" />
-    <None Include="tutorial3.vert" />
-    <None Include="tutorial4.frag" />
-    <None Include="tutorial4.geom" />
-    <None Include="tutorial4.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

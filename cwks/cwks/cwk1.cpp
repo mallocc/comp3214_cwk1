@@ -99,6 +99,8 @@ int test1                       = 0;
 
 Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),50,0.9,500 };
 
+
+
 //shape generators non indexed triangles
 //Cube vertex data array
 GLfloat cube_v_b[] = {
@@ -139,14 +141,14 @@ GLfloat cube_v_b[] = {
 	-1.0f, 1.0f, 1.0f,
 	1.0f,-1.0f, 1.0f
 };
-std::vector<glm::vec3> generate_cube()
+std::vector<glm::vec3>			generate_cube()
 {
 	std::vector<glm::vec3> v;
 	for (int i = 0; i < 36; i++)
 		v.push_back(glm::vec3(cube_v_b[i*3], cube_v_b[i * 3+1], cube_v_b[i * 3+2]));
 	return v;
 }
-std::vector<glm::vec3> generate_cone(int k)
+std::vector<glm::vec3>			generate_cone(int k)
 {
 	std::vector<glm::vec3> v;
 	float step = 2. * 3.141596 / float(k);
@@ -174,7 +176,7 @@ std::vector<glm::vec3> generate_cone(int k)
 	}
 	return v;
 }
-std::vector<glm::vec3> generate_cylinder(int k, float len)
+std::vector<glm::vec3>			generate_cylinder(int k, float len)
 {
 	std::vector<glm::vec3> v;
 	glm::vec3 t1, t2;
@@ -218,7 +220,7 @@ std::vector<glm::vec3> generate_cylinder(int k, float len)
 	}
 	return v;
 }
-std::vector<glm::vec3> generate_sphere(int lats, int longs)
+std::vector<glm::vec3>			generate_sphere(int lats, int longs)
 {
 	std::vector<glm::vec3> v;
 	glm::vec3 t1, t2;
@@ -257,7 +259,7 @@ std::vector<glm::vec3> generate_sphere(int lats, int longs)
 
 	return v;
 }
-std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
+std::vector<glm::vec3>			generate_normals(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> n;
 	for (int i = 0; i < v.size(); i += 3)
@@ -269,7 +271,7 @@ std::vector<glm::vec3> generate_normals(std::vector<glm::vec3> v)
 	}
 	return n;
 }
-std::vector<glm::vec3> generate_rect()
+std::vector<glm::vec3>			generate_rect()
 {
 	std::vector<glm::vec3> n;
 	n.push_back(glm::vec3(1, 0, 1));
@@ -280,44 +282,32 @@ std::vector<glm::vec3> generate_rect()
 	n.push_back(glm::vec3(1, 0, 1));
 	return n;
 }
-
-//Randomises the colour buffer passed
-void random_colour_buffer(glm::vec3 ** buffer_data, int n)
-{
-	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
-	for (int v = 0; v < n; v++)
-			(*buffer_data)[v] = glm::vec3(randf(), randf(), randf());
-}
-//Randomises the colour buffer passed
-void random_alpha_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
-{
-	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
-	for (int v = 0; v < n; v++)
-		(*buffer_data)[v] = glm::vec3(colour.x*randf(), colour.y*randf(), colour.z*randf());
-}
-//Randomises the colour buffer passed
-void generate_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour)
-{
-	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
-	for (int v = 0; v < n; v++)
-		(*buffer_data)[v] = colour;
-}
-//Randomises the colour buffer passed
-void random_alpha_uniform_colour_buffer(glm::vec3 ** buffer_data, int n, glm::vec3 colour1,glm::vec3 colour2)
-{
-	*buffer_data = (glm::vec3*)std::malloc(n * sizeof(glm::vec3));
-	for (int v = 0; v < n; v++)
-		(*buffer_data)[v] = (colour1 + (colour2 - colour1)*randf());
-}
-//Randomises the colour buffer passed
-std::vector<vec3> generate_colour_buffer(glm::vec3 colour, int n)
+std::vector<vec3>				generate_colour_buffer(glm::vec3 colour, int n)
 {
 	std::vector<vec3> v;
 	for (int i = 0; i < n; i++)
 		v.push_back(colour);
 	return v;
 }
-std::vector<Vertex> pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n)
+std::vector<vec3>				random_colour_buffer(glm::vec3 max, int n)
+{
+	std::vector<vec3> v;
+	for (int i = 0; i < n; i++)
+		v.push_back(glm::vec3(max*randf(), max*randf(), max*randf()));
+	return v;
+}
+std::vector<vec3>				random_intesity_colour_buffer(glm::vec3 colour, int n)
+{
+	std::vector<vec3> v;
+	float f;
+	for (int i = 0; i < n; i++)
+	{
+		f = randf();
+		v.push_back(glm::vec3(colour.x*f, colour.y*f, colour.z*f));
+	}
+	return v;
+}
+std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n)
 {
 	std::vector<Vertex> object;
 	for (int i = 0; i < v->size(); ++i)
@@ -330,6 +320,8 @@ std::vector<Vertex> pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec
 	}
 	return object;
 }
+
+
 
 void Entity::init()
 {
@@ -407,14 +399,24 @@ void Composite_Entity::add(Entity e)
 	entities.push_back(e);
 }
 
+
+
+void			reset_rocket()
+{
+	rocket.p.pos = glm::vec3();
+	rocket.p.vel = glm::vec3();
+}
+
+
+
 //Error callback  
-static void error_callback(int error, const char* description)
+static void		error_callback(int error, const char* description)
 {
 	fputs(description, stderr);
 	_fgetchar();
 }
 //Loads shaders from their files into a shader program (from opengl-tutorials.org)
-GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
+GLuint			LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
 
 	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -509,13 +511,8 @@ GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_pat
 	return ProgramID;
 }
 
-void reset_rocket()
-{
-	rocket.p.pos = glm::vec3();
-	rocket.p.vel = glm::vec3();
-}
 
-void setup_program_handles(GLuint prog)
+void			setup_program_handles(GLuint prog)
 {
 	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
 	ambient_color_handle.init(prog);
@@ -536,12 +533,12 @@ void setup_program_handles(GLuint prog)
 		light_handles[i].init(prog);
 }
 //Initilise custom objects
-void init_objects()
+void			init_objects()
 {
 	// create sphere for a and b
 	std::vector<vec3> v = generate_sphere(100,100);
 	std::vector<vec3> n = generate_normals(v);
-	std::vector<vec3> c = generate_colour_buffer(WHITE,v.size());
+	std::vector<vec3> c = random_intesity_colour_buffer(WHITE,v.size());
 	std::vector<Vertex> o = pack_object(&v, &c, &n);
 	sphere = Entity(
 		o,
@@ -558,7 +555,7 @@ void init_objects()
 	// cone
 	v = generate_cone(100);
 	n = generate_normals(v);
-	c = generate_colour_buffer(WHITE, v.size());
+	c = generate_colour_buffer(GREY, v.size());
 	o = pack_object(&v, &c, &n);
 	temp = Entity(
 		o,
@@ -625,7 +622,7 @@ void init_objects()
 	ground.init();
 }
 //Key input callback  
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void		key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	
 	if (action == GLFW_PRESS)
@@ -696,7 +693,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 }
 //Custom graphics loop
-void loop()
+void			loop()
 {
 	switch (screen_number)
 	{
@@ -722,7 +719,7 @@ void loop()
 
 
 //GL window initialose
-int initWindow()
+int				initWindow()
 {
 	//Set the error callback  
 	glfwSetErrorCallback(error_callback);
@@ -788,7 +785,7 @@ int initWindow()
 
 }
 //GL graphics loop
-void glLoop(void(*graphics_loop)())
+void			glLoop(void(*graphics_loop)())
 {
 	//Main Loop  
 	do
@@ -842,7 +839,7 @@ void glLoop(void(*graphics_loop)())
 }
 
 //cwk1 main function
-int cwk1_main()
+int				cwk1_main()
 {
 	initWindow();
 	glLoop(loop);
