@@ -48,17 +48,17 @@ ambient_color_handle;
 
 //Shader paths
 const char
-	*vertex_shader = "tut.vert",
-	*fragment_shader = "tut.frag",
-	*vertex_shader_a = "A.vert",
+	*vertex_shader     = "tut.vert",
+	*fragment_shader   = "tut.frag",
+	*vertex_shader_a   = "A.vert",
 	*fragment_shader_a = "A.frag",
-	*vertex_shader_b = "B.vert",
+	*vertex_shader_b   = "B.vert",
 	*fragment_shader_b = "B.frag",
-	*vertex_shader_c = "B.vert",
+	*vertex_shader_c   = "B.vert",
 	*fragment_shader_c = "B.frag",
-	*vertex_shader_d = "D.vert",
+	*vertex_shader_d   = "D.vert",
 	*fragment_shader_d = "D.frag",
-	*vertex_shader_e = "E.vert",
+	*vertex_shader_e   = "E.vert",
 	*fragment_shader_e = "E.frag";
 
 //proj and view matrix
@@ -99,7 +99,7 @@ int test1                       = 0;
 
 Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),50,0.9,500 };
 
-
+Obj test = Obj("XL5-BASE.obj", glm::vec3());;
 
 //shape generators non indexed triangles
 //Cube vertex data array
@@ -399,6 +399,55 @@ void Composite_Entity::add(Entity e)
 	entities.push_back(e);
 }
 
+void Obj::init()
+{
+	std::vector<Vertex> data;
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		Vertex vert;
+		vert.position = vertices[i];
+		vert.color = colours[i];
+		//vert.normal = normals[i];
+		data.push_back(vert);
+	}
+	Vertex * d = data.data();
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(struct Vertex), d, GL_STATIC_DRAW);
+	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, position));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, color));
+	glEnableVertexAttribArray(1);
+	//glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+	//	(const GLvoid*)offsetof(struct Vertex, normal));
+	//glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
+	glFlush();
+}
+void Obj::draw()
+{
+	glm::mat4 Model =
+		glm::translate(glm::mat4(1.), p.pos) *
+		glm::rotate(glm::mat4(1.), theta, rotation) *
+		glm::scale(glm::mat4(1.), scale);
+	mat4_handles[0].load(Model);
+	mat4_handles[1].load();
+	mat4_handles[2].load();
+
+	ambient_color_handle.load();
+
+	for (Var_Handle v : light_handles)
+		v.load();
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	glBindVertexArray(0);
+	glFinish();
+}
 
 
 void			reset_rocket()
@@ -535,6 +584,10 @@ void			setup_program_handles(GLuint prog)
 //Initilise custom objects
 void			init_objects()
 {
+	test.scale *= 0.1f;
+	test.init();
+
+
 	// create sphere for a and b
 	std::vector<vec3> v = generate_sphere(100,100);
 	std::vector<vec3> n = generate_normals(v);
@@ -655,6 +708,9 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 		case GLFW_KEY_D:
 			screen_number = SCREEN_D;
 			current_program = program_d;
+			eye_position = vec3(0, 0, 5);
+			eye_direction = vec3(0, 0, 0);
+			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
@@ -673,10 +729,10 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_position -= direction * dt * speed;
 			break;
 		case GLFW_KEY_RIGHT:
-			eye_position += right * dt * speed;
+			eye_position = glm::quat(glm::vec3(0, glm::radians(10.0f), 0)) * eye_position;
 			break;
 		case GLFW_KEY_LEFT:
-			eye_position -= right * dt * speed;
+			eye_position = glm::quat(glm::vec3(0, -glm::radians(10.0f), 0)) * eye_position;
 			break;
 		case GLFW_KEY_ENTER:
 			fps_on = !fps_on;
@@ -711,6 +767,7 @@ void			loop()
 		ground.draw(wire_frame);
 		break;
 	case SCREEN_D:
+		test.draw();
 		break;
 	case SCREEN_E:
 		break;

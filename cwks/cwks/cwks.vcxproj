@@ -156,6 +156,7 @@
     <ClCompile Include="cwk2.cpp" />
     <ClCompile Include="cwkp.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="tiny_obj_loader.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +166,7 @@
     <ClInclude Include="GLTEST.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="opengl.h" />
+    <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
