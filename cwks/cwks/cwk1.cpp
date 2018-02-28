@@ -98,9 +98,10 @@ bool
 
 int test1                       = 0;
 
-Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),50,0.9,500 };
+Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),75,0.9,500 };
 
 Obj model = Obj("objects/XL5-BASE.obj", WHITE);
+Obj tex_sphere;
 //Obj model = Obj("bb8.obj", "bb8.png", WHITE);
 
 
@@ -128,6 +129,16 @@ GLuint loadTexturePNG(const char *fname)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	delete data;
 	return tex;
+}
+
+glm::vec2 cart_polar(glm::vec3 v)
+{
+	float r = sqrt(v.x*v.x+ v.y*v.y + v.z*v.z);
+	return glm::vec2(atan(v.y/v.x), acos(v.z/r));
+}
+glm::vec3 polar_cart(float theta, float phi)
+{
+	return glm::vec3(cos(theta)*cos(phi), cos(theta) * sin(phi), sin(phi));
 }
 
 //shape generators non indexed triangles
@@ -252,36 +263,34 @@ std::vector<glm::vec3>			generate_cylinder(int k, float len)
 std::vector<glm::vec3>			generate_sphere(int lats, int longs)
 {
 	std::vector<glm::vec3> v;
-	glm::vec3 t1, t2;
-	float len = 1.;
-	float step_lats = 2. * 3.141596 / float(lats);
-	float step_longs = 2. * 3.141596 / float(longs);
+	float step_lats = glm::radians(360.0f) / float(lats);
+	float step_longs = glm::radians(360.0f) / float(longs);
 	float Radius = 1., x, y, z;
-	for (float a = step_lats; a <= (2. * 3.141596) + step_lats; a += step_lats)
+	for (float a = 0; a <= glm::radians(360.0f); a += step_lats)
 	{
-		for (float b = 0; b <= (2. * 3.141596); b += step_longs)
+		for (float b = 0; b <= glm::radians(360.0f); b += step_longs)
 		{
-			x = Radius * cos(a) * cos(b);
-			y = Radius * cos(a) * sin(b);
-			z = Radius * sin(a);
+			x = cos(a) * cos(b);
+			y = cos(a) * sin(b);
+			z = sin(a);
 			v.push_back(glm::vec3(x, y, z));
-			x = Radius * cos(a + step_lats) * cos(b);
-			y = Radius * cos(a + step_lats) * sin(b);
-			z = Radius * sin(a + step_lats);
+			x = cos(a + step_lats) * cos(b);
+			y = cos(a + step_lats) * sin(b);
+			z = sin(a + step_lats);
 			v.push_back(glm::vec3(x, y, z));
-			x = Radius * cos(a + step_lats) * cos(b + step_longs);
-			y = Radius * cos(a + step_lats) * sin(b + step_longs);
-			z = Radius * sin(a + step_lats);
+			x = cos(a + step_lats) * cos(b + step_longs);
+			y = cos(a + step_lats) * sin(b + step_longs);
+			z = sin(a + step_lats);
 			v.push_back(glm::vec3(x, y, z));
 
 			v.push_back(glm::vec3(x, y, z));
-			x = Radius * cos(a) * cos(b + step_longs);
-			y = Radius * cos(a) * sin(b + step_longs);
-			z = Radius * sin(a);
+			x = cos(a) * cos(b + step_longs);
+			y = cos(a) * sin(b + step_longs);
+			z = sin(a);
 			v.push_back(glm::vec3(x, y, z));
-			x = Radius * cos(a) * cos(b);
-			y = Radius * cos(a) * sin(b);
-			z = Radius * sin(a);
+			x = cos(a) * cos(b);
+			y = cos(a) * sin(b);
+			z = sin(a);
 			v.push_back(glm::vec3(x, y, z));
 		}
 	}
@@ -355,11 +364,11 @@ std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::
 	return object;
 }
 
-std::vector<vec2>				generate_random_uvs(std::vector<glm::vec3> v)
+std::vector<vec2>				generate_sphere_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<vec2> uv;
 	for (int i = 0; i < v.size(); i++)
-		uv.push_back(glm::normalize(glm::vec2(v[i].x, v[i].z)));
+		uv.push_back(cart_polar(glm::normalize(v[i])));
 	return uv;
 }
 
@@ -458,7 +467,7 @@ Obj::Obj(const char *filename, glm::vec3 c)
 			));
 	colours = random_colour_buffer(c, vertices.size());
 	normals = generate_normals(vertices);
-	uvs = generate_random_uvs(vertices);
+	uvs = generate_sphere_uvs(vertices);
 
 	data = pack_object(&vertices, &colours, &normals, &uvs);
 }
@@ -483,7 +492,7 @@ Obj::Obj(const char *filename, glm::vec3 c,
 			));
 	colours = random_colour_buffer(c, vertices.size());
 	normals = generate_normals(vertices);
-	uvs = generate_random_uvs(vertices);
+	uvs = generate_sphere_uvs(vertices);
 
 	data = pack_object(&vertices, &colours, &normals, &uvs);
 
@@ -692,14 +701,17 @@ void			setup_program_handles(GLuint prog)
 void			init_objects()
 {
 	model.scale *= 0.05f;
-	model.init("tex_grad1.bmp");
+	model.init("rock.bmp");
+
+
 
 
 	// create sphere for a and b
 	std::vector<vec3> v = generate_sphere(100,100);
 	std::vector<vec3> n = generate_normals(v);
 	std::vector<vec3> c = random_intesity_colour_buffer(WHITE,v.size());
-	std::vector<Vertex> o = pack_object(&v, &c, &n, NULL);
+	std::vector<vec2> uv = generate_sphere_uvs(v);
+	std::vector<Vertex> o = pack_object(&v, &c, &n, &uv);
 	sphere = Entity(
 		o,
 		Particle(glm::vec3(), glm::vec3()),
@@ -708,6 +720,13 @@ void			init_objects()
 		glm::vec3(1,1,1)
 		);
 	sphere.init();
+	
+	tex_sphere = Obj(o,
+		Particle(glm::vec3(), glm::vec3()),
+		glm::vec3(1, 0, 0),
+		glm::radians(90.0f),
+		glm::vec3(1, 1, 1));
+	tex_sphere.init("rock.bmp");
 
 	Entity temp;
 
@@ -828,7 +847,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			current_program = program_e;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
-			lights.pos = glm::vec3(0,5,10);
+			lights.pos = glm::vec3(0,10,0);
 			setup_program_handles(current_program);
 			break;
 
@@ -882,9 +901,11 @@ void			loop()
 		ground.draw(wire_frame);
 		break;
 	case SCREEN_D:
-		
+		tex_sphere.draw();
 		break;
 	case SCREEN_E:
+		//tex_sphere.draw();
+
 		model.draw();
 		break;
 	}

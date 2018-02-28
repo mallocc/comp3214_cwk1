@@ -27,9 +27,6 @@ inline float		randf()
 }
 
 
-
-
-
 //// STUCTS ////
 
 struct Vertex
@@ -238,6 +235,8 @@ public:
 	GLfloat theta;
 	Particle p;
 
+
+	Obj() {}
 	Obj(const char *filename, 
 		glm::vec3 c);
 	Obj(const char *filename, 
@@ -260,4 +259,9 @@ public:
 	{
 		handle->load(tex);
 	}
+};
+
+struct Composite_Obj
+{
+
 };
