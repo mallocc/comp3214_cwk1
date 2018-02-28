@@ -289,3 +289,4 @@ __pycache__/
 
 #un-ignore sub directory
 !/cwks/cwks/graphics_stuff/
+!/cwks/cwks/objects/
