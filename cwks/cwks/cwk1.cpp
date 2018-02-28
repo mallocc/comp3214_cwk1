@@ -1,5 +1,5 @@
 #include "cwk1.h"
-
+#include "stb_image/stb_image.h"
 
 using namespace glm;
 
@@ -44,22 +44,23 @@ GLuint
 Var_Handle
 mat4_handles[3],
 light_handles[5],
-ambient_color_handle;
+ambient_color_handle,
+texture_handle;
 
 //Shader paths
 const char
-	*vertex_shader     = "tut.vert",
-	*fragment_shader   = "tut.frag",
-	*vertex_shader_a   = "A.vert",
-	*fragment_shader_a = "A.frag",
-	*vertex_shader_b   = "B.vert",
-	*fragment_shader_b = "B.frag",
-	*vertex_shader_c   = "B.vert",
-	*fragment_shader_c = "B.frag",
-	*vertex_shader_d   = "D.vert",
-	*fragment_shader_d = "D.frag",
-	*vertex_shader_e   = "E.vert",
-	*fragment_shader_e = "E.frag";
+	*vertex_shader     = "shaders/tut.vert",
+	*fragment_shader   = "shaders/tut.frag",
+	*vertex_shader_a   = "shaders/A.vert",
+	*fragment_shader_a = "shaders/A.frag",
+	*vertex_shader_b   = "shaders/B.vert",
+	*fragment_shader_b = "shaders/B.frag",
+	*vertex_shader_c   = "shaders/B.vert",
+	*fragment_shader_c = "shaders/B.frag",
+	*vertex_shader_d   = "shaders/D.vert",
+	*fragment_shader_d = "shaders/D.frag",
+	*vertex_shader_e   = "shaders/E.vert",
+	*fragment_shader_e = "shaders/E.frag";
 
 //proj and view matrix
 glm::mat4 
@@ -99,7 +100,35 @@ int test1                       = 0;
 
 Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),50,0.9,500 };
 
-Obj test = Obj("XL5-BASE.obj", glm::vec3());;
+Obj model = Obj("objects/XL5-BASE.obj", WHITE);
+//Obj model = Obj("bb8.obj", "bb8.png", WHITE);
+
+
+GLuint loadTexturePNG(const char *fname)
+{
+	int w, h, n;
+	unsigned char *data = stbi_load(fname, &w, &h, &n, 0);
+	if (data == NULL) {
+		fprintf(stderr, "Image not loaded: %s", fname);
+		const char *error = stbi_failure_reason();
+		fprintf(stderr, "Failure reason %s\n", error);
+	}
+	GLuint tex = 1;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	// set the texture wrapping parameters
+	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	delete data;
+	return tex;
+}
 
 //shape generators non indexed triangles
 //Cube vertex data array
@@ -307,21 +336,32 @@ std::vector<vec3>				random_intesity_colour_buffer(glm::vec3 colour, int n)
 	}
 	return v;
 }
-std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n)
+std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n, std::vector<glm::vec2> * uv)
 {
 	std::vector<Vertex> object;
 	for (int i = 0; i < v->size(); ++i)
 	{
 		Vertex vert;
+		if(v != NULL)
 		vert.position = (*v)[i];
+		if (c != NULL)
 		vert.color = (*c)[i];
+		if (n != NULL)
 		vert.normal = (*n)[i];
+		if (uv != NULL)
+		vert.uv = (*uv)[i];
 		object.push_back(vert);
 	}
 	return object;
 }
 
-
+std::vector<vec2>				generate_random_uvs(std::vector<glm::vec3> v)
+{
+	std::vector<vec2> uv;
+	for (int i = 0; i < v.size(); i++)
+		uv.push_back(glm::normalize(glm::vec2(v[i].x, v[i].z)));
+	return uv;
+}
 
 void Entity::init()
 {
@@ -398,18 +438,73 @@ void Composite_Entity::add(Entity e)
 {
 	entities.push_back(e);
 }
-
-void Obj::init()
+Obj::Obj(const char *filename, glm::vec3 c)
 {
-	std::vector<Vertex> data;
-	for (int i = 0; i < vertices.size(); ++i)
-	{
-		Vertex vert;
-		vert.position = vertices[i];
-		vert.color = colours[i];
-		//vert.normal = normals[i];
-		data.push_back(vert);
-	}
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::vector< glm::vec3 > vertices;
+	std::vector< glm::vec2 > uvs;
+	std::vector< glm::vec3 > normals;
+	std::vector< glm::vec3 > colours;
+
+	tinyobj::LoadObj(shapes, materials, filename, NULL);
+
+	for (int i = 0; i < shapes.size(); i++)
+		for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
+			vertices.push_back(glm::vec3(
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 1],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
+			));
+	colours = random_colour_buffer(c, vertices.size());
+	normals = generate_normals(vertices);
+	uvs = generate_random_uvs(vertices);
+
+	data = pack_object(&vertices, &colours, &normals, &uvs);
+}
+Obj::Obj(const char *filename, glm::vec3 c,
+	Particle _p, glm::vec3 _rotation, GLfloat _theta, glm::vec3 _scale)
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::vector< glm::vec3 > vertices;
+	std::vector< glm::vec2 > uvs;
+	std::vector< glm::vec3 > normals;
+	std::vector< glm::vec3 > colours;
+
+	tinyobj::LoadObj(shapes, materials, filename, NULL);
+
+	for (int i = 0; i < shapes.size(); i++)
+		for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
+			vertices.push_back(glm::vec3(
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 1],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
+			));
+	colours = random_colour_buffer(c, vertices.size());
+	normals = generate_normals(vertices);
+	uvs = generate_random_uvs(vertices);
+
+	data = pack_object(&vertices, &colours, &normals, &uvs);
+
+	p = _p;
+	rotation = _rotation;
+	theta = _theta;
+	scale = _scale;
+}
+Obj::Obj(std::vector<Vertex> _data,
+	Particle _p, glm::vec3 _rotation, GLfloat _theta, glm::vec3 _scale)
+{
+	data = _data;
+	p = _p;
+	rotation = _rotation;
+	theta = _theta;
+	scale = _scale;
+}
+void Obj::init(const char *texfilename)
+{
+	if (texfilename != "")
+		tex = loadTexturePNG(texfilename);
 	Vertex * d = data.data();
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -422,9 +517,12 @@ void Obj::init()
 	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
 		(const GLvoid*)offsetof(struct Vertex, color));
 	glEnableVertexAttribArray(1);
-	//glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
-	//	(const GLvoid*)offsetof(struct Vertex, normal));
-	//glEnableVertexAttribArray(2);
+	glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, normal));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer((GLuint)3, 2, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, uv));
+	glEnableVertexAttribArray(3);
 	glBindVertexArray(0);
 	glFlush();
 }
@@ -439,15 +537,21 @@ void Obj::draw()
 	mat4_handles[2].load();
 
 	ambient_color_handle.load();
+	
+	loadTexturehandle(&texture_handle);
 
 	for (Var_Handle v : light_handles)
 		v.load();
 
+	glActiveTexture(GL_TEXTURE0 + tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+
 	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	glDrawArrays(GL_TRIANGLES, 0, data.size());
 	glBindVertexArray(0);
 	glFinish();
 }
+
 
 
 void			reset_rocket()
@@ -563,6 +667,9 @@ GLuint			LoadShaders(const char * vertex_file_path, const char * fragment_file_p
 
 void			setup_program_handles(GLuint prog)
 {
+	texture_handle = Var_Handle("uTex");
+	texture_handle.init(prog);
+
 	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
 	ambient_color_handle.init(prog);
 
@@ -584,15 +691,15 @@ void			setup_program_handles(GLuint prog)
 //Initilise custom objects
 void			init_objects()
 {
-	test.scale *= 0.1f;
-	test.init();
+	model.scale *= 0.05f;
+	model.init("tex_grad1.bmp");
 
 
 	// create sphere for a and b
 	std::vector<vec3> v = generate_sphere(100,100);
 	std::vector<vec3> n = generate_normals(v);
 	std::vector<vec3> c = random_intesity_colour_buffer(WHITE,v.size());
-	std::vector<Vertex> o = pack_object(&v, &c, &n);
+	std::vector<Vertex> o = pack_object(&v, &c, &n, NULL);
 	sphere = Entity(
 		o,
 		Particle(glm::vec3(), glm::vec3()),
@@ -609,7 +716,7 @@ void			init_objects()
 	v = generate_cone(100);
 	n = generate_normals(v);
 	c = generate_colour_buffer(GREY, v.size());
-	o = pack_object(&v, &c, &n);
+	o = pack_object(&v, &c, &n, NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(), glm::vec3()),
@@ -633,7 +740,7 @@ void			init_objects()
 	v = generate_cylinder(100, 5);
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
+	o = pack_object(&v, &c, &n, NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(0,-2,0), glm::vec3()),
@@ -647,7 +754,7 @@ void			init_objects()
 	v = generate_sphere(100, 100);
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
+	o = pack_object(&v, &c, &n, NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(0,-7,0), glm::vec3()),
@@ -664,7 +771,7 @@ void			init_objects()
 	v = generate_rect();
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n);
+	o = pack_object(&v, &c, &n, NULL);
 	ground = Entity(
 		o,
 		Particle(glm::vec3(0,-1.0f,0), glm::vec3()),
@@ -688,6 +795,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			current_program = program_a;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
+			lights.pos = glm::vec3(0, 0, 10);
 			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_B:
@@ -695,13 +803,15 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			current_program = program_b;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
-			setup_program_handles(current_program);		
+			lights.pos = glm::vec3(0, 0, 10);
+			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_C:
 			screen_number = SCREEN_C;
 			current_program = program_c;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
+			lights.pos = glm::vec3(0, 0, 10);
 			setup_program_handles(current_program);
 			reset_rocket();
 			break;
@@ -710,11 +820,16 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			current_program = program_d;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
+			lights.pos = glm::vec3(0, 0, 10);
 			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
 			current_program = program_e;
+			eye_position = vec3(0, 0, 5);
+			eye_direction = vec3(0, 0, 0);
+			lights.pos = glm::vec3(0,5,10);
+			setup_program_handles(current_program);
 			break;
 
 			//other
@@ -767,9 +882,10 @@ void			loop()
 		ground.draw(wire_frame);
 		break;
 	case SCREEN_D:
-		test.draw();
+		
 		break;
 	case SCREEN_E:
+		model.draw();
 		break;
 	}
 }
@@ -828,7 +944,6 @@ int				initWindow()
 	program_e = LoadShaders(vertex_shader_e, fragment_shader_e);
 	current_program = program_a;
 
-
 	setup_program_handles(current_program);
 
 	// Enable depth test
@@ -837,6 +952,8 @@ int				initWindow()
 	glDepthFunc(GL_LESS);
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
+
+	glEnable(GL_TEXTURE_2D);
 
 	init_objects();
 

@@ -4,7 +4,7 @@
 #include "opengl.h"
 #include "utils.h"
 
-#include "tiny_obj_loader.h"
+#include "tiny_object_loader/tiny_obj_loader.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +27,9 @@ inline float		randf()
 }
 
 
+
+
+
 //// STUCTS ////
 
 struct Vertex
@@ -34,6 +37,7 @@ struct Vertex
 	glm::vec3 position;
 	glm::vec3 color;
 	glm::vec3 normal;
+	glm::vec2 uv;
 };
 
 struct Particle
@@ -130,6 +134,7 @@ struct Light
 #define MAT4_HANDLE 0
 #define VEC3_HANDLE 1
 #define FLOAT_HANDLE 2
+#define INTEGER_HANDLE 3
 struct Var_Handle
 {
 private:
@@ -138,6 +143,7 @@ private:
 	glm::mat4 * data_m;
 	glm::vec3 * data_v;
 	GLfloat * data_f;
+	GLuint * data_i;
 	int handle_type = FLOAT_HANDLE;
 
 public:
@@ -165,7 +171,13 @@ public:
 		data_f = data;
 		handle_type = FLOAT_HANDLE;
 	}
-	
+	Var_Handle(const char * var_name_, GLuint * data)
+	{
+		var_name = var_name_;
+		data_i = data;
+		handle_type = INTEGER_HANDLE;
+	}
+
 	void init(GLuint program)
 	{
 		handle = glGetUniformLocation(program, var_name);
@@ -182,6 +194,8 @@ public:
 			glUniform3f(handle, data_v->x, data_v->y, data_v->z);
 		else if (handle_type == FLOAT_HANDLE)
 			glUniform1f(handle, *data_f);
+		else if (handle_type == INTEGER_HANDLE)
+			glUniform1i(handle, *data_i);
 	}
 	void load(glm::mat4 data)
 	{
@@ -194,6 +208,10 @@ public:
 	void load(GLfloat data)
 	{
 		glUniform1f(handle, data);
+	}
+	void load(GLuint data)
+	{
+		glUniform1i(handle, data);
 	}
 
 	GLuint get_handle_id()
@@ -209,115 +227,37 @@ public:
 
 struct Obj
 {
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::vector< glm::vec3 > vertices;
-	std::vector< glm::vec2 > uvs;
-	std::vector< glm::vec3 > normals;
-	glm::vec3 colour = glm::vec3(0.5f, 1.0f, 0.5f);
-	std::vector< glm::vec3 > colours;
-	GLuint vao, buffer;
+private:
+	GLuint vao, buffer, tex;
+
+public:
+	std::vector<Vertex> data;
 	glm::vec3
 		rotation = glm::vec3(1, 0, 0),
 		scale = glm::vec3(1, 1, 1);
 	GLfloat theta;
 	Particle p;
 
+	Obj(const char *filename, 
+		glm::vec3 c);
+	Obj(const char *filename, 
+		glm::vec3 c, 
+		Particle _p,
+		glm::vec3 _rotation, 
+		GLfloat _theta,
+		glm::vec3 _scale);
+	Obj(
+		std::vector<Vertex>	_data,
+		Particle _p,
+		glm::vec3 _rotation, 
+		GLfloat _theta,
+		glm::vec3 _scale);
 
-	Obj(const char *filename, glm::vec3 c)
-	{
-		vertices.clear();
-		colours.clear();
-
-		colour = c;
-
-		tinyobj::LoadObj(shapes, materials, filename, NULL);
-		for (int i = 0; i < shapes.size(); i++)
-			for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
-				vertices.push_back(glm::vec3(
-					shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3],
-					shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 1],
-					shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
-				));
-		for (int i = 0; i < vertices.size(); i++)
-			colours.push_back(glm::vec3(randf(), randf(),randf()));
-
-		//readObj(filename, &vertices, &uvs, &normals);
-	}
-
-	bool readObj(
-		const char *path,
-		std::vector< glm::vec3 > * out_vertices,
-		std::vector< glm::vec2 > * out_uvs,
-		std::vector< glm::vec3 > * out_normals)
-	{
-
-		std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-		std::vector< glm::vec3 > temp_vertices;
-		std::vector< glm::vec2 > temp_uvs;
-		std::vector< glm::vec3 > temp_normals;
-
-		FILE * file = fopen(path, "r");
-		if (file == NULL) {
-			printf("Impossible to open the file !\n");
-			return false;
-		}
-		while (1) {
-
-			char lineHeader[128];
-			// read the first word of the line
-			int res = fscanf(file, "%s", lineHeader);
-			if (res == EOF)
-				break; // EOF = End Of File. Quit the loop.
-
-					   // else : parse lineHeader
-			if (strcmp(lineHeader, "v") == 0) {
-				glm::vec3 vertex;
-				fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
-				temp_vertices.push_back(vertex);
-			}
-			else if (strcmp(lineHeader, "vt") == 0) {
-				glm::vec2 uv;
-				fscanf(file, "%f %f\n", &uv.x, &uv.y);
-				temp_uvs.push_back(uv);
-			}
-			else if (strcmp(lineHeader, "vn") == 0) {
-				glm::vec3 normal;
-				fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
-				temp_normals.push_back(normal);
-			}
-			else if (strcmp(lineHeader, "f") == 0) {
-				std::string vertex1, vertex2, vertex3;
-				unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
-				int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
-				if (matches != 9) {
-					printf("File can't be read by our simple parser : ( Try exporting with other options\n");
-					break;
-				}
-				vertexIndices.push_back(vertexIndex[0]);
-				vertexIndices.push_back(vertexIndex[1]);
-				vertexIndices.push_back(vertexIndex[2]);
-				uvIndices.push_back(uvIndex[0]);
-				uvIndices.push_back(uvIndex[1]);
-				uvIndices.push_back(uvIndex[2]);
-				normalIndices.push_back(normalIndex[0]);
-				normalIndices.push_back(normalIndex[1]);
-				normalIndices.push_back(normalIndex[2]);
-			}
-		}
-		std::cout << vertexIndices.size() << std::endl;
-		// For each vertex of each triangle
-		for (unsigned int i = 0; i < vertexIndices.size(); i++)
-			out_vertices->push_back(temp_vertices[vertexIndices[i] - 1]);
-		for (unsigned int i = 0; i < uvIndices.size(); i++)
-			out_uvs->push_back(temp_uvs[uvIndices[i] - 1]);
-		for (unsigned int i = 0; i < normalIndices.size(); i++)
-			out_normals->push_back(temp_normals[normalIndices[i] - 1]);
-		std::cout << "test" << std::endl;
-		return true;
-	}
-
-	void init();
-
+	void init(const char *texfilename);
 	void draw();
+
+	void loadTexturehandle(Var_Handle * handle)
+	{
+		handle->load(tex);
+	}
 };

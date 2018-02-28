@@ -18,6 +18,7 @@ void Check(const char *where) { // Function to check OpenGL error status
     else
         what = "Unknown Error";
     fprintf(stderr, "Error (%d) %s  at %s\n", err, what, where);
+	getc(stdin);
     exit(1);
 }
 

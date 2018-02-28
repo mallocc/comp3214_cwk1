@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{68d8604a-b8c9-47a3-8e99-bc814432ac5d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Objects">
+      <UniqueIdentifier>{2b202032-2b71-4fcf-a097-12fb2113742d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -33,7 +36,7 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tiny_obj_loader.cpp">
+    <ClCompile Include="graphics_stuff\tiny_object_loader\tiny_obj_loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,46 +62,63 @@
     <ClInclude Include="GLTEST.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tiny_obj_loader.h">
+    <ClInclude Include="graphics_stuff\stb_image\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics_stuff\tiny_object_loader\tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tut.frag">
+    <None Include="shaders\A.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="tut.vert">
+    <None Include="shaders\A.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="A.vert">
+    <None Include="shaders\B.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="A.frag">
+    <None Include="shaders\B.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="B.frag">
+    <None Include="shaders\C.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="B.vert">
+    <None Include="shaders\C.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="C.frag">
+    <None Include="shaders\D.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="C.vert">
+    <None Include="shaders\D.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="D.frag">
+    <None Include="shaders\E.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="D.vert">
+    <None Include="shaders\E.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="E.frag">
+    <None Include="shaders\tut.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="E.vert">
+    <None Include="shaders\tut.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="objects\XL5-BASE.mtl">
+      <Filter>Resource Files\Objects</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="objects\Circle.obj">
+      <Filter>Resource Files\Objects</Filter>
+    </Object>
+    <Object Include="objects\XL5-BASE.obj">
+      <Filter>Resource Files\Objects</Filter>
+    </Object>
   </ItemGroup>
 </Project>
