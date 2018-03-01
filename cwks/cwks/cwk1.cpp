@@ -42,10 +42,10 @@ GLuint
 
 // self contained custom variable handlers
 Var_Handle
-mat4_handles[3],
-light_handles[5],
-ambient_color_handle,
-texture_handle;
+	mat4_handles[3],
+	light_handles[5],
+	ambient_color_handle,
+	texture_handle, normal_handle;
 
 //Shader paths
 const char
@@ -57,8 +57,8 @@ const char
 	*fragment_shader_b = "shaders/B.frag",
 	*vertex_shader_c   = "shaders/B.vert",
 	*fragment_shader_c = "shaders/B.frag",
-	*vertex_shader_d   = "shaders/D.vert",
-	*fragment_shader_d = "shaders/D.frag",
+	*vertex_shader_d   = "shaders/E.vert",
+	*fragment_shader_d = "shaders/E.frag",
 	*vertex_shader_e   = "shaders/E.vert",
 	*fragment_shader_e = "shaders/E.frag";
 
@@ -80,22 +80,22 @@ glm::vec3
 	up(0, 1, 0),
 	direction;
 
-	float 
+float 
 	horizontalAngle             = 3.14f,
 	verticalAngle               = 0.0f,
 	// Initial Field of View
 	initialFoV                  = 45.0f,
 	// Speed variable
-	speed                       = 20.0f,
+	speed                       = 5.0f,
 	// Mouse sensitivity
 	mouseSpeed                  = 0.1f,
 	// Time delta
-	dt                          = 0.01;
+	dt                          = 0.002;
 	// toggles
 bool 
 	fps_on                      = 0,
-	wire_frame                  = 0;
-
+	wire_frame                  = 0,
+	spin						= 0;
 int test1                       = 0;
 
 Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),75,0.9,500 };
@@ -138,7 +138,7 @@ glm::vec2 cart_polar(glm::vec3 v)
 }
 glm::vec3 polar_cart(float theta, float phi)
 {
-	return glm::vec3(cos(theta)*cos(phi), cos(theta) * sin(phi), sin(phi));
+	return glm::vec3(cos(theta)*cos(phi), cos(theta) * sin(phi), sin(theta));
 }
 
 //shape generators non indexed triangles
@@ -267,34 +267,16 @@ std::vector<glm::vec3>			generate_sphere(int lats, int longs)
 	float step_longs = glm::radians(360.0f) / float(longs);
 	float Radius = 1., x, y, z;
 	for (float a = 0; a <= glm::radians(360.0f); a += step_lats)
-	{
 		for (float b = 0; b <= glm::radians(360.0f); b += step_longs)
 		{
-			x = cos(a) * cos(b);
-			y = cos(a) * sin(b);
-			z = sin(a);
-			v.push_back(glm::vec3(x, y, z));
-			x = cos(a + step_lats) * cos(b);
-			y = cos(a + step_lats) * sin(b);
-			z = sin(a + step_lats);
-			v.push_back(glm::vec3(x, y, z));
-			x = cos(a + step_lats) * cos(b + step_longs);
-			y = cos(a + step_lats) * sin(b + step_longs);
-			z = sin(a + step_lats);
-			v.push_back(glm::vec3(x, y, z));
+			v.push_back(polar_cart(a, b));
+			v.push_back(polar_cart(a + step_lats, b));
+			v.push_back(polar_cart(a + step_lats, b + step_longs));
+			v.push_back(polar_cart(a + step_lats, b + step_longs));
+			v.push_back(polar_cart(a, b + step_longs));
+			v.push_back(polar_cart(a, b));
 
-			v.push_back(glm::vec3(x, y, z));
-			x = cos(a) * cos(b + step_longs);
-			y = cos(a) * sin(b + step_longs);
-			z = sin(a);
-			v.push_back(glm::vec3(x, y, z));
-			x = cos(a) * cos(b);
-			y = cos(a) * sin(b);
-			z = sin(a);
-			v.push_back(glm::vec3(x, y, z));
 		}
-	}
-
 	return v;
 }
 std::vector<glm::vec3>			generate_normals(std::vector<glm::vec3> v)
@@ -304,7 +286,17 @@ std::vector<glm::vec3>			generate_normals(std::vector<glm::vec3> v)
 	{
 		glm::vec3 nm = glm::normalize(glm::cross(v[i + 1] - v[i], v[i + 2] - v[i]));
 		for (int j = 0; j < 3; ++j)
-			//n.push_back(-v[i]);
+			n.push_back(nm);
+	}
+	return n;
+}
+std::vector<glm::vec3>			generate_binormals(std::vector<glm::vec3> v)
+{
+	std::vector<glm::vec3> n;
+	for (int i = 0; i < v.size(); i += 6)
+	{
+		glm::vec3 nm = glm::normalize(v[i + 2] - v[i]);
+		for (int j = 0; j < 6; ++j)
 			n.push_back(nm);
 	}
 	return n;
@@ -319,6 +311,13 @@ std::vector<glm::vec3>			generate_rect()
 	n.push_back(glm::vec3(-1, 0, 1));
 	n.push_back(glm::vec3(1, 0, 1));
 	return n;
+}
+std::vector<vec2>				generate_sphere_uvs(std::vector<glm::vec3> v)
+{
+	std::vector<vec2> uv;
+	for (int i = 0; i < v.size(); i++)
+		uv.push_back(cart_polar((v[i])));
+	return uv;
 }
 std::vector<vec3>				generate_colour_buffer(glm::vec3 colour, int n)
 {
@@ -345,32 +344,27 @@ std::vector<vec3>				random_intesity_colour_buffer(glm::vec3 colour, int n)
 	}
 	return v;
 }
-std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n, std::vector<glm::vec2> * uv)
+std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::vec3> * c, std::vector<glm::vec3> * n, std::vector<glm::vec2> * uv, std::vector<glm::vec3> * bn)
 {
 	std::vector<Vertex> object;
 	for (int i = 0; i < v->size(); ++i)
 	{
 		Vertex vert;
 		if(v != NULL)
-		vert.position = (*v)[i];
+			vert.position = (*v)[i];
 		if (c != NULL)
-		vert.color = (*c)[i];
+			vert.color    = (*c)[i];
 		if (n != NULL)
-		vert.normal = (*n)[i];
+			vert.normal   = (*n)[i];
 		if (uv != NULL)
-		vert.uv = (*uv)[i];
+			vert.uv       = (*uv)[i];
+		if (bn != NULL)
+			vert.binormal = (*bn)[i];
 		object.push_back(vert);
 	}
 	return object;
 }
 
-std::vector<vec2>				generate_sphere_uvs(std::vector<glm::vec3> v)
-{
-	std::vector<vec2> uv;
-	for (int i = 0; i < v.size(); i++)
-		uv.push_back(cart_polar(glm::normalize(v[i])));
-	return uv;
-}
 
 void Entity::init()
 {
@@ -454,6 +448,7 @@ Obj::Obj(const char *filename, glm::vec3 c)
 	std::vector< glm::vec3 > vertices;
 	std::vector< glm::vec2 > uvs;
 	std::vector< glm::vec3 > normals;
+	std::vector< glm::vec3 > binormals;
 	std::vector< glm::vec3 > colours;
 
 	tinyobj::LoadObj(shapes, materials, filename, NULL);
@@ -467,9 +462,10 @@ Obj::Obj(const char *filename, glm::vec3 c)
 			));
 	colours = random_colour_buffer(c, vertices.size());
 	normals = generate_normals(vertices);
+	binormals = generate_binormals(vertices);
 	uvs = generate_sphere_uvs(vertices);
 
-	data = pack_object(&vertices, &colours, &normals, &uvs);
+	data = pack_object(&vertices, &colours, &normals, &uvs, &binormals);
 }
 Obj::Obj(const char *filename, glm::vec3 c,
 	Particle _p, glm::vec3 _rotation, GLfloat _theta, glm::vec3 _scale)
@@ -479,6 +475,7 @@ Obj::Obj(const char *filename, glm::vec3 c,
 	std::vector< glm::vec3 > vertices;
 	std::vector< glm::vec2 > uvs;
 	std::vector< glm::vec3 > normals;
+	std::vector< glm::vec3 > binormals;
 	std::vector< glm::vec3 > colours;
 
 	tinyobj::LoadObj(shapes, materials, filename, NULL);
@@ -492,9 +489,10 @@ Obj::Obj(const char *filename, glm::vec3 c,
 			));
 	colours = random_colour_buffer(c, vertices.size());
 	normals = generate_normals(vertices);
+	binormals = generate_binormals(vertices);
 	uvs = generate_sphere_uvs(vertices);
 
-	data = pack_object(&vertices, &colours, &normals, &uvs);
+	data = pack_object(&vertices, &colours, &normals, &uvs, &binormals);
 
 	p = _p;
 	rotation = _rotation;
@@ -532,6 +530,39 @@ void Obj::init(const char *texfilename)
 	glVertexAttribPointer((GLuint)3, 2, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
 		(const GLvoid*)offsetof(struct Vertex, uv));
 	glEnableVertexAttribArray(3);
+	glVertexAttribPointer((GLuint)4, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, binormal));
+	glEnableVertexAttribArray(4);
+	glBindVertexArray(0);
+	glFlush();
+}
+void Obj::init(const char *texfilename, const char *normfilename)
+{
+	if (texfilename != "")
+		tex = loadTexturePNG(texfilename);
+	if (normfilename != "")
+		norm = loadTexturePNG(normfilename);
+	Vertex * d = data.data();
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glGenBuffers(1, &buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(struct Vertex), d, GL_STATIC_DRAW);
+	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, position));
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, color));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, normal));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer((GLuint)3, 2, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, uv));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer((GLuint)4, 3, GL_FLOAT, GL_FALSE, sizeof(struct Vertex),
+		(const GLvoid*)offsetof(struct Vertex, binormal));
+	glEnableVertexAttribArray(4);
 	glBindVertexArray(0);
 	glFlush();
 }
@@ -548,16 +579,20 @@ void Obj::draw()
 	ambient_color_handle.load();
 	
 	loadTexturehandle(&texture_handle);
+	loadNormalhandle(&normal_handle);
 
 	for (Var_Handle v : light_handles)
 		v.load();
 
 	glActiveTexture(GL_TEXTURE0 + tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
+	glActiveTexture(GL_TEXTURE0 + norm);
+	glBindTexture(GL_TEXTURE_2D, norm);
 
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, data.size());
 	glBindVertexArray(0);
+
 	glFinish();
 }
 
@@ -678,6 +713,8 @@ void			setup_program_handles(GLuint prog)
 {
 	texture_handle = Var_Handle("uTex");
 	texture_handle.init(prog);
+	normal_handle = Var_Handle("uNorm");
+	normal_handle.init(prog);
 
 	ambient_color_handle = Var_Handle("ambient_color", &ambient_color);
 	ambient_color_handle.init(prog);
@@ -700,18 +737,17 @@ void			setup_program_handles(GLuint prog)
 //Initilise custom objects
 void			init_objects()
 {
+	model.theta = glm::radians(90.0f);
 	model.scale *= 0.05f;
-	model.init("rock.bmp");
-
-
-
+	model.init("187.bmp", "187_norm.bmp");
 
 	// create sphere for a and b
 	std::vector<vec3> v = generate_sphere(100,100);
 	std::vector<vec3> n = generate_normals(v);
-	std::vector<vec3> c = random_intesity_colour_buffer(WHITE,v.size());
+	std::vector<vec3> c = generate_colour_buffer(WHITE,v.size());
 	std::vector<vec2> uv = generate_sphere_uvs(v);
-	std::vector<Vertex> o = pack_object(&v, &c, &n, &uv);
+	std::vector<vec3> bn = generate_binormals(v);
+	std::vector<Vertex> o = pack_object(&v, &c, &n, &uv, &bn);
 	sphere = Entity(
 		o,
 		Particle(glm::vec3(), glm::vec3()),
@@ -726,7 +762,12 @@ void			init_objects()
 		glm::vec3(1, 0, 0),
 		glm::radians(90.0f),
 		glm::vec3(1, 1, 1));
-	tex_sphere.init("rock.bmp");
+	//tex_sphere.init("Snow_001_COLOR.jpg", "Snow_001_NORM.jpg");
+	//tex_sphere.init("Stone_wall_006_COLOR.jpg", "Stone_wall_006_NORM.jpg");
+	//tex_sphere.init("rock.bmp", "rockNormal.bmp");
+	tex_sphere.init("197.bmp", "197_norm.bmp");
+	//tex_sphere.init("156.bmp", "156_norm.bmp");
+	//tex_sphere.init("187.bmp", "187_norm.bmp");
 
 	Entity temp;
 
@@ -735,7 +776,7 @@ void			init_objects()
 	v = generate_cone(100);
 	n = generate_normals(v);
 	c = generate_colour_buffer(GREY, v.size());
-	o = pack_object(&v, &c, &n, NULL);
+	o = pack_object(&v, &c, &n, NULL,NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(), glm::vec3()),
@@ -759,7 +800,7 @@ void			init_objects()
 	v = generate_cylinder(100, 5);
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n, NULL);
+	o = pack_object(&v, &c, &n, NULL, NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(0,-2,0), glm::vec3()),
@@ -773,7 +814,7 @@ void			init_objects()
 	v = generate_sphere(100, 100);
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n, NULL);
+	o = pack_object(&v, &c, &n, NULL, NULL);
 	temp = Entity(
 		o,
 		Particle(glm::vec3(0,-7,0), glm::vec3()),
@@ -784,16 +825,16 @@ void			init_objects()
 	temp.init();
 	rocket.add(temp);
 
-	rocket.scale *= 0.1f;
+	rocket.scale *= 0.2f;
 
 	//ground
 	v = generate_rect();
 	n = generate_normals(v);
 	c = generate_colour_buffer(WHITE, v.size());
-	o = pack_object(&v, &c, &n, NULL);
+	o = pack_object(&v, &c, &n, NULL, NULL);
 	ground = Entity(
 		o,
-		Particle(glm::vec3(0,-1.0f,0), glm::vec3()),
+		Particle(glm::vec3(0,-2.0f,0), glm::vec3()),
 		glm::vec3(1, 0, 0),
 		glm::radians(0.0f),
 		glm::vec3(10, 1, 10)
@@ -802,8 +843,7 @@ void			init_objects()
 }
 //Key input callback  
 static void		key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	
+{	
 	if (action == GLFW_PRESS)
 	{
 		switch (key)
@@ -815,6 +855,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
+			lights.brightness = 50;
 			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_B:
@@ -823,6 +864,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
+			lights.brightness = 50;
 			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_C:
@@ -831,6 +873,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
+			lights.brightness = 50;
 			setup_program_handles(current_program);
 			reset_rocket();
 			break;
@@ -840,6 +883,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
+			lights.brightness = 50;
 			setup_program_handles(current_program);
 			break;
 		case GLFW_KEY_E:
@@ -847,7 +891,8 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			current_program = program_e;
 			eye_position = vec3(0, 0, 5);
 			eye_direction = vec3(0, 0, 0);
-			lights.pos = glm::vec3(0,10,0);
+			lights.pos = glm::vec3(0,10,10);
+			lights.brightness = 150;
 			setup_program_handles(current_program);
 			break;
 
@@ -857,16 +902,16 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			glfwSetWindowShouldClose(window, GL_TRUE);
 			break;
 		case GLFW_KEY_UP:
-			eye_position += direction * dt * speed;
+			eye_position += direction * (speed/20.0f);
 			break;
 		case GLFW_KEY_DOWN:
-			eye_position -= direction * dt * speed;
+			eye_position -= direction * (speed/20.0f);
 			break;
 		case GLFW_KEY_RIGHT:
-			eye_position = glm::quat(glm::vec3(0, glm::radians(10.0f), 0)) * eye_position;
+			eye_position = glm::quat(glm::vec3(0, glm::radians(speed), 0)) * eye_position;
 			break;
 		case GLFW_KEY_LEFT:
-			eye_position = glm::quat(glm::vec3(0, -glm::radians(10.0f), 0)) * eye_position;
+			eye_position = glm::quat(glm::vec3(0, -glm::radians(speed), 0)) * eye_position;
 			break;
 		case GLFW_KEY_ENTER:
 			fps_on = !fps_on;
@@ -879,12 +924,19 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 		case GLFW_KEY_I:
 			test1++;
 			break;
+		case GLFW_KEY_S:
+			spin = !spin;
+			break;
 		}
 	}
 }
 //Custom graphics loop
 void			loop()
 {
+
+	if (spin)
+		lights.pos = glm::quat(glm::vec3(dt,dt,dt)) * lights.pos;
+
 	switch (screen_number)
 	{
 	case SCREEN_A:
@@ -904,8 +956,6 @@ void			loop()
 		tex_sphere.draw();
 		break;
 	case SCREEN_E:
-		//tex_sphere.draw();
-
 		model.draw();
 		break;
 	}

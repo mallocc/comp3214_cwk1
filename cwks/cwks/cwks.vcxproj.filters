@@ -112,12 +112,24 @@
     <None Include="objects\XL5-BASE.mtl">
       <Filter>Resource Files\Objects</Filter>
     </None>
+    <None Include="objects\LOD0.mtl">
+      <Filter>Resource Files\Objects</Filter>
+    </None>
+    <None Include="objects\Scifi_downtown_city.mtl">
+      <Filter>Resource Files\Objects</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Object Include="objects\Circle.obj">
       <Filter>Resource Files\Objects</Filter>
     </Object>
     <Object Include="objects\XL5-BASE.obj">
+      <Filter>Resource Files\Objects</Filter>
+    </Object>
+    <Object Include="objects\LOD0.obj">
+      <Filter>Resource Files\Objects</Filter>
+    </Object>
+    <Object Include="objects\Scifi_downtown_city.obj">
       <Filter>Resource Files\Objects</Filter>
     </Object>
   </ItemGroup>

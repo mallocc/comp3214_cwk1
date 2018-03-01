@@ -34,6 +34,7 @@ struct Vertex
 	glm::vec3 position;
 	glm::vec3 color;
 	glm::vec3 normal;
+	glm::vec3 binormal;
 	glm::vec2 uv;
 };
 
@@ -225,12 +226,12 @@ public:
 struct Obj
 {
 private:
-	GLuint vao, buffer, tex;
+	GLuint vao, buffer, tex, norm;
 
 public:
 	std::vector<Vertex> data;
 	glm::vec3
-		rotation = glm::vec3(1, 0, 0),
+		rotation = glm::vec3(0, 1, 0),
 		scale = glm::vec3(1, 1, 1);
 	GLfloat theta;
 	Particle p;
@@ -253,15 +254,31 @@ public:
 		glm::vec3 _scale);
 
 	void init(const char *texfilename);
+	void init(const char *texfilename, const char *normfilename);
 	void draw();
 
 	void loadTexturehandle(Var_Handle * handle)
 	{
 		handle->load(tex);
 	}
+	void loadNormalhandle(Var_Handle * handle)
+	{
+		handle->load(norm);
+	}
 };
 
 struct Composite_Obj
 {
+	std::vector<Entity> Obj;
+	glm::vec3
+		rotation = glm::vec3(1, 0, 0),
+		scale = glm::vec3(1, 1, 1);
+	GLfloat theta;
+	Particle p;
 
+	Composite_Obj() {};
+
+	void init();
+	void draw(int wire_frame);
+	void add(Entity e);
 };
