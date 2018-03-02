@@ -27,6 +27,8 @@ inline float		randf()
 }
 
 
+
+
 //// STUCTS ////
 
 struct Vertex
@@ -34,7 +36,7 @@ struct Vertex
 	glm::vec3 position;
 	glm::vec3 color;
 	glm::vec3 normal;
-	glm::vec3 binormal;
+	glm::vec3 tangent;
 	glm::vec2 uv;
 };
 
@@ -68,55 +70,6 @@ struct Particle
 		pos += vel * dt;
 		life -= mortal;
 	}
-};
-
-struct Entity
-{
-private:
-	GLuint vao, buffer;
-
-public:
-	std::vector<Vertex> data;
-	glm::vec3 
-		rotation = glm::vec3(1, 0, 0), 
-		scale = glm::vec3(1, 1, 1);
-	GLfloat theta;
-	Particle p;
-
-	Entity() {}
-	Entity(
-		std::vector<Vertex> _data, 
-		Particle _p, 
-		glm::vec3 _rotation, GLfloat _theta, 
-		glm::vec3 _scale)
-	{
-		data = _data;
-		p = _p;
-		rotation = _rotation;
-		theta = _theta;
-		scale = _scale;
-	}
-
-	void init();
-	void draw_array(int wire_frame);
-	void draw(int wire_frame);
-};
-
-struct Composite_Entity
-{
-	std::vector<Entity> entities;
-	glm::vec3 
-		rotation = glm::vec3(1, 0, 0), 
-		scale = glm::vec3(1, 1, 1);
-	GLfloat theta;
-	Particle p;
-
-	Composite_Entity() {};
-
-	void init();
-	void draw(int wire_frame);
-	void add(Entity e);
-
 };
 
 struct Light
@@ -227,35 +180,7 @@ struct Obj
 {
 private:
 	GLuint vao, buffer, tex, norm;
-
-public:
-	std::vector<Vertex> data;
-	glm::vec3
-		rotation = glm::vec3(0, 1, 0),
-		scale = glm::vec3(1, 1, 1);
-	GLfloat theta;
-	Particle p;
-
-
-	Obj() {}
-	Obj(const char *filename, 
-		glm::vec3 c);
-	Obj(const char *filename, 
-		glm::vec3 c, 
-		Particle _p,
-		glm::vec3 _rotation, 
-		GLfloat _theta,
-		glm::vec3 _scale);
-	Obj(
-		std::vector<Vertex>	_data,
-		Particle _p,
-		glm::vec3 _rotation, 
-		GLfloat _theta,
-		glm::vec3 _scale);
-
-	void init(const char *texfilename);
-	void init(const char *texfilename, const char *normfilename);
-	void draw();
+	int data_size = 0;
 
 	void loadTexturehandle(Var_Handle * handle)
 	{
@@ -265,11 +190,42 @@ public:
 	{
 		handle->load(norm);
 	}
+	
+	void init(const char *texfilename, const char *normfilename, std::vector<Vertex>  * d);
+
+public:	
+	glm::vec3
+		rotation = glm::vec3(0, 1, 0),
+		scale = glm::vec3(1, 1, 1);
+	GLfloat theta;
+	Particle p;
+
+
+	Obj() {}
+
+	Obj(const char *filename, 
+		const char *texfilename, 
+		const char *normfilename,
+		glm::vec3 c,
+		Particle _p,
+		glm::vec3 _rotation,
+		GLfloat _theta,
+		glm::vec3 _scale);
+	Obj(const char *texfilename, const char *normfilename,
+		std::vector<Vertex>	_data,
+		Particle _p,
+		glm::vec3 _rotation,
+		GLfloat _theta,
+		glm::vec3 _scale);
+
+	void draw(int wire_frame);
+	void draw_array(int wire_frame);
+
 };
 
 struct Composite_Obj
 {
-	std::vector<Entity> Obj;
+	std::vector<Obj> objects;
 	glm::vec3
 		rotation = glm::vec3(1, 0, 0),
 		scale = glm::vec3(1, 1, 1);
@@ -277,8 +233,12 @@ struct Composite_Obj
 	Particle p;
 
 	Composite_Obj() {};
+	Composite_Obj(
+		Particle _p,
+		glm::vec3 _rotation,
+		GLfloat _theta,
+		glm::vec3 _scale);
 
-	void init();
 	void draw(int wire_frame);
-	void add(Entity e);
+	void add(Obj e);
 };

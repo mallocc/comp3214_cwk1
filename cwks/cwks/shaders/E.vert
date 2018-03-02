@@ -1,10 +1,10 @@
 #version 400
 
-layout(location = 0) in vec3 vertexPosition_modelspace;
-layout(location = 1) in vec3 vertexColor;
-layout(location = 2) in vec3 vertexNormal;
-layout(location = 3) in vec2 vertexUv;
-layout(location = 4) in vec3 vertexBinormal;
+layout(location = 0) in vec3 inVert;
+layout(location = 1) in vec3 inColor;
+layout(location = 2) in vec3 inNorm;
+layout(location = 3) in vec2 inUV;
+layout(location = 4) in vec3 inTang;
 
 uniform mat4 M;
 uniform mat4 V;
@@ -12,27 +12,24 @@ uniform mat4 P;
 
 out vec3 color;
 out vec2 uv;
-
-varying vec3 vNormal;
-varying vec3 vBinormal;
-varying vec3 vViewPosition;
-
-#pragma glslify: transpose = require('glsl-transpose')
-#pragma glslify: inverse = require('glsl-inverse')
-
+out vec3 view_pos;
+out vec3 norm;
+out vec3 tang;
 
 void main()
 {
-	mat4 model_view_matrix = V * M;
-	vec4 view_model_pos = model_view_matrix * vec4(vertexPosition_modelspace,1);
-	vViewPosition = view_model_pos.xyz;
-	gl_Position = P * view_model_pos;  
+	vec4 vp = V*M*vec4(inVert,1);	
+	gl_Position = P*vp;
 	  
-	mat3 normal_matrix = transpose(inverse(mat3(model_view_matrix)));
-	vNormal = normalize(normal_matrix * vertexNormal);
-	vBinormal = normalize(normal_matrix * vertexBinormal);
+	view_pos = vp.xyz;
 
-	color = vertexColor;
+	vec4 new_norm = M * vec4(inNorm,1);
+	norm = new_norm.xyz;
 
-	uv = vertexUv;
+	vec4 new_tang = M * vec4(inTang,1);
+	tang = new_tang.xyz;
+
+	color = inColor;
+
+	uv = inUV;
 }

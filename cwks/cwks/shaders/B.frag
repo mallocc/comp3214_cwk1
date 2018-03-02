@@ -1,37 +1,62 @@
 #version 400
 
-in vec3 color;
 
-varying vec3 vViewPosition;
-varying vec3 vNormal;
 
-uniform mat4 M;
-uniform mat4 V;
-uniform mat4 P;
+// ins
+in vec3 o_color;
+in vec3 o_to_light;
+in vec3 o_to_eye;
+in vec3 o_norm;
 
-uniform vec3 light;
-uniform float specular_scale;
-uniform float shininess;
-uniform float brightness;
+// uniforms
+uniform mat4 u_m;
+uniform mat4 u_v;
+uniform mat4 u_p;
 
-uniform vec3 ambient_color;
-uniform vec3 diffuse_color;
+uniform vec3 u_light_pos;
+uniform vec3 u_eye_pos;
+
+uniform float u_specular_scale;
+uniform float u_shininess;
+uniform float u_brightness;
+
+uniform vec3 u_ambient_color;
+uniform vec3 u_diffuse_color;
+
+
 
 void main() 
-{
-	vec4 light_pos = V * vec4(light,1);
-	vec3 light_vec = light_pos.xyz - vViewPosition;
+{	
+// get distance to the light
+	float r = length(o_to_light);
+	float r2 = r*r; 
 
-	float light_distance = length(light_vec);	
-	float falloff = brightness / (light_distance*light_distance);
+// work out after interpolation
+	vec3 L = normalize(o_to_light);
+	vec3 V = normalize(o_to_eye);
+	vec3 N = normalize(o_norm);
 
-	vec3 l = normalize(light_vec);              //light direction
-	vec3 v = normalize(vViewPosition);            //eye direction
+// calculate ambient effects
+	vec3 amb = u_ambient_color;
 
-	float specular = pow(clamp(dot(v, -l),0,1), shininess) * specular_scale * falloff;
-	vec3 diffuse = diffuse_color * clamp(dot(vNormal, l),0,1) * falloff;	
+// calculate diffuse effects
+	vec3 dif = u_diffuse_color * clamp(dot(N, L), 0, 1) * u_brightness / r2;
 
-	vec3 colour = color * (diffuse + ambient_color) + specular;
+// calculate specular effects
+	float specular_term = 0;
+	// calculate specular reflection only if
+	// the surface is oriented to the light source
+	if(dot(N, L) > 0)
+	{
+		// half vector
+		vec3 H = normalize(L + V);
+		specular_term = pow(dot(N, H), u_shininess);
+	}
+	float spe = u_specular_scale * specular_term;
 
-	gl_FragColor = vec4(colour,1);
+// calculate final phong color
+	vec3 final_color = o_color * (amb + dif) + spe;
+
+// apply fragment color
+	gl_FragColor = vec4(final_color,1);
 }

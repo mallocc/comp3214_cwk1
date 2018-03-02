@@ -1,30 +1,46 @@
 #version 400
 
-layout(location = 0) in vec3 vertexPosition_modelspace;
-layout(location = 1) in vec3 vertexColor;
-layout(location = 2) in vec3 vertexNormal;
 
-uniform mat4 M;
-uniform mat4 V;
-uniform mat4 P;
 
-out vec3 color;
+// ins
+layout(location = 0) in vec3 i_vert;
+layout(location = 1) in vec3 i_color;
+layout(location = 2) in vec3 i_norm;
 
-varying vec3 vNormal;
-varying vec3 vViewPosition;
+// uniforms
+uniform mat4 u_m;
+uniform mat4 u_v;
+uniform mat4 u_p;
 
-#pragma glslify: transpose = require('glsl-transpose')
-#pragma glslify: inverse = require('glsl-inverse')
+uniform vec3 u_light_pos;
+uniform vec3 u_eye_pos;
+
+// outs
+out vec3 o_color;
+out vec3 o_to_light;
+out vec3 o_to_eye;
+out vec3 o_norm;
+
+
 
 void main()
 {
-	mat4 model_view_matrix = V * M;
-	vec4 view_model_pos = model_view_matrix * vec4(vertexPosition_modelspace,1);
-	vViewPosition = view_model_pos.xyz;
-	gl_Position = P * view_model_pos;  
-	  
-	mat3 normal_matrix = transpose(inverse(mat3(model_view_matrix)));
-	vNormal = normalize(normal_matrix * vertexNormal);
+// calculate world position of vertex
+	vec4 world_pos = u_m * vec4(i_vert, 1.0f);
 
-	color = vertexColor;
+// normal in world space
+	vec4 new_norm  = u_m * vec4(i_norm,1);
+	o_norm         = new_norm.xyz;
+
+// direction to eye
+	o_to_eye       = u_eye_pos - world_pos.xyz;	
+
+// direction to light
+	o_to_light     = u_light_pos - world_pos.xyz;	
+
+// color of vertex
+	o_color        = i_color;
+
+// set projected point
+	gl_Position    = u_p * u_v * world_pos;	
 }

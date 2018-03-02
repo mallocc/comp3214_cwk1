@@ -1,17 +1,24 @@
 #version 400 core
 
-layout(location = 0) in vec3 inVert;
-layout(location = 1) in vec3 inColor;
-layout(location = 2) in vec3 inNorm;
 
-uniform mat4 M;
-uniform mat4 V;
-uniform mat4 P;
 
-out vec3 color;
+// ins
+layout(location = 0) in vec3 i_vert;
+layout(location = 1) in vec3 i_color;
+
+// uniforms
+uniform mat4 u_m;
+uniform mat4 u_v;
+uniform mat4 u_p;
+
+// outs
+out vec3 o_color;
 
 void main()
 {
-	gl_Position = P * V * M * vec4(inVert, 1);
-	color = inColor;
+// color of vertex
+	o_color        = i_color;
+
+// set projected point
+	gl_Position    = u_p * u_v * u_m * vec4(i_vert, 1.0f);	
 }

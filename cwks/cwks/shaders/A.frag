@@ -1,8 +1,14 @@
 #version 400 core
 
-in vec3 color;
+
+
+// ins
+in vec3 o_color;
+
+
 
 void main() 
 {
-	gl_FragColor = vec4(color,1);
+// apply fragment color
+	gl_FragColor = vec4(o_color,1);
 }
