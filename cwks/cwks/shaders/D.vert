@@ -26,6 +26,7 @@ out vec3 o_tang;
 out vec2 o_uv;
 
 
+
 void main()
 {
 // calculate world position of vertex

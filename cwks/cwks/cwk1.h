@@ -81,7 +81,6 @@ struct Light
 	float shininess;
 };
 
-
 #define MAT4_HANDLE 0
 #define VEC3_HANDLE 1
 #define FLOAT_HANDLE 2
@@ -179,20 +178,20 @@ public:
 struct Obj
 {
 private:
-	GLuint vao, buffer, tex, norm;
+	GLuint vao, buffer, tex = GL_TEXTURE0, norm = GL_TEXTURE0;
 	int data_size = 0;
 
-	void loadTexturehandle(Var_Handle * handle)
+	void load_texture_handle(Var_Handle * handle)
 	{
 		handle->load(tex);
 	}
-	void loadNormalhandle(Var_Handle * handle)
+	void load_normal_handle(Var_Handle * handle)
 	{
 		handle->load(norm);
 	}
 	
-	void init(const char *texfilename, const char *normfilename, std::vector<Vertex>  * d);
-
+	void init(std::vector<Vertex>  * d);
+	void load_textures(const char *texfilename, const char *normfilename);
 public:	
 	glm::vec3
 		rotation = glm::vec3(0, 1, 0),
@@ -203,6 +202,12 @@ public:
 
 	Obj() {}
 
+	Obj(const char *filename,
+		glm::vec3 c,
+		Particle _p,
+		glm::vec3 _rotation,
+		GLfloat _theta,
+		glm::vec3 _scale);
 	Obj(const char *filename, 
 		const char *texfilename, 
 		const char *normfilename,
@@ -211,8 +216,9 @@ public:
 		glm::vec3 _rotation,
 		GLfloat _theta,
 		glm::vec3 _scale);
-	Obj(const char *texfilename, const char *normfilename,
-		std::vector<Vertex>	_data,
+	Obj(const char *texfilename, 
+		const char *normfilename,
+		std::vector<Vertex>	data,
 		Particle _p,
 		glm::vec3 _rotation,
 		GLfloat _theta,

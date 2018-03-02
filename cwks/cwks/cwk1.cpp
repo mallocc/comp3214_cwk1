@@ -15,6 +15,7 @@ using namespace glm;
 #define GEN_TANGS 0x2
 #define GEN_UVS_POLAR 0x4
 #define GEN_UVS_RECTS 0x8
+#define GEN_UVS_SPHERE 0x80
 #define GEN_ALL (GEN_NORMS | GEN_TANGS | GEN_UVS_POLAR)
 #define GEN_COLOR 0x10
 #define GEN_COLOR_RAND 0x20
@@ -70,8 +71,8 @@ const char
 	*fragment_shader_c = "shaders/A.frag",
 	*vertex_shader_d   = "shaders/D.vert",
 	*fragment_shader_d = "shaders/D.frag",
-	*vertex_shader_e   = "shaders/D.vert",
-	*fragment_shader_e = "shaders/D.frag";
+	*vertex_shader_e   = "shaders/E.vert",
+	*fragment_shader_e = "shaders/E.frag";
 
 //proj and view matrix
 glm::mat4 
@@ -116,13 +117,13 @@ Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),200,0.5,200};
 
 
 // object declarations
-Obj tex_sphere, a_sphere, b_sphere, planet, model;
+Obj tex_sphere, a_sphere, b_sphere, planet, model, bunny;
 Composite_Obj rocket;
 
 
 
 // loads an image into a gl texture
-GLuint loadTexturePNG(const char *fname)
+GLuint load_texture_from_image(const char *fname)
 {
 	int w, h, n;
 	unsigned char *data = stbi_load(fname, &w, &h, &n, 0);
@@ -151,7 +152,7 @@ GLuint loadTexturePNG(const char *fname)
 glm::vec2 cart_polar(glm::vec3 v)
 {
 	float r = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-	return glm::vec2(fmod(atan(v.y / v.x),1.0f), fmod(acos(v.z / r),1.0f));
+	return glm::vec2(atan(v.y / v.x), acos(v.z / r));
 }
 // converts polar to cartesian
 glm::vec3 polar_cart(float theta, float phi)
@@ -345,6 +346,27 @@ std::vector<glm::vec2>			generate_polar_uvs(std::vector<glm::vec3> v)
 		uv.push_back(cart_polar((v[i])));
 	return uv;
 }
+std::vector<glm::vec2>			generate_sphereical_uvs(int lats, int longs)
+{
+	std::vector<glm::vec2> v;
+	float step_lats = glm::radians(360.0f) / float(lats);
+	float step_longs = glm::radians(360.0f) / float(longs);
+	float Radius = 1., x, y, z;
+	for (float a = 0; a <= glm::radians(360.0f); a += step_lats)
+		for (float b = 0; b <= glm::radians(360.0f); b += step_longs)
+		{
+			float x = a / (glm::pi<float>()), y = b / (glm::pi<float>());
+			float step_x = step_lats / (glm::pi<float>()), step_y = step_longs / (glm::pi<float>());
+			v.push_back(glm::vec2(x, y));
+			v.push_back(glm::vec2(x + step_x, y));
+			v.push_back(glm::vec2(x + step_x, y + step_y));
+			v.push_back(glm::vec2(x + step_x, y + step_y));
+			v.push_back(glm::vec2(x, y + step_y));
+			v.push_back(glm::vec2(x, y));
+
+		}
+	return v;
+}
 std::vector<glm::vec2>			generate_repeated_rect_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<vec2> uv;
@@ -405,10 +427,12 @@ std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, unsigned int flag
 		c = random_colour_buffer(color, v->size());
 	if ((flags & GEN_COLOR_RAND_I) == GEN_COLOR_RAND_I)
 		c = random_intesity_colour_buffer(color, v->size());
-	if ((flags & GEN_UVS_RECTS) == GEN_UVS_RECTS)
-		uv = generate_repeated_rect_uvs(*v);
 	if ((flags & GEN_UVS_POLAR) == GEN_UVS_POLAR)
 		uv = generate_polar_uvs(*v);
+	if ((flags & GEN_UVS_SPHERE) == GEN_UVS_SPHERE)
+		uv = generate_sphereical_uvs(300,300);
+	if ((flags & GEN_UVS_RECTS) == GEN_UVS_RECTS)
+		uv = generate_repeated_rect_uvs(*v);
 	if ((flags & GEN_TANGS) == GEN_TANGS)
 		t = generate_tangents(*v);
 
@@ -451,8 +475,38 @@ std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, std::vector<glm::
 	return object;
 }
 
+// Obj code bodies
+Obj::Obj(const char *filename,
+	glm::vec3 c,
+	Particle _p,
+	glm::vec3 _rotation,
+	GLfloat _theta,
+	glm::vec3 _scale)
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::vector< glm::vec3 > vertices;
+	std::vector< Vertex > o;
 
+	tinyobj::LoadObj(shapes, materials, filename, NULL);
 
+	for (int i = 0; i < shapes.size(); i++)
+		for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
+			vertices.push_back(glm::vec3(
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 1],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
+			));
+
+	std::vector<Vertex> data = pack_object(&vertices, GEN_ALL | GEN_COLOR, c);
+
+	p = _p;
+	rotation = _rotation;
+	theta = _theta;
+	scale = _scale;
+
+	init(&data);
+}
 Obj::Obj(
 	const char *filename, 
 	const char *texfilename, 
@@ -478,17 +532,18 @@ Obj::Obj(
 				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
 			));
 	
-	std::vector<Vertex> data = pack_object(&vertices, GEN_ALL, c);
+	std::vector<Vertex> data = pack_object(&vertices, GEN_ALL | GEN_COLOR, c);
 
 	p = _p;
 	rotation = _rotation;
 	theta = _theta;
 	scale = _scale;
 
-	init(texfilename, normfilename, &data);
+	load_textures(texfilename, normfilename);
+	init(&data);
 }
 Obj::Obj(const char *texfilename, const char *normfilename,
-	std::vector<Vertex>	_data,
+	std::vector<Vertex>	data,
 	Particle _p,
 	glm::vec3 _rotation,
 	GLfloat _theta,
@@ -499,16 +554,19 @@ Obj::Obj(const char *texfilename, const char *normfilename,
 	theta = _theta;
 	scale = _scale;
 
-	init(texfilename, normfilename, &_data);
-
+	load_textures(texfilename, normfilename);
+	init(&data);
 }
-void Obj::init(const char *texfilename, const char *normfilename, std::vector<Vertex> * d)
+void Obj::load_textures(const char *texfilename, const char *normfilename)
+{
+	if (texfilename != "")
+		tex = load_texture_from_image(texfilename);
+	if (normfilename != "")
+		norm = load_texture_from_image(normfilename);
+}
+void Obj::init(std::vector<Vertex> * d)
 {
 	data_size = d->size();
-	if (texfilename != "")
-		tex = loadTexturePNG(texfilename);
-	if (normfilename != "")
-		norm = loadTexturePNG(normfilename);
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	glGenBuffers(1, &buffer);
@@ -553,8 +611,8 @@ void Obj::draw(int wire_frame)
 }
 void Obj::draw_array(int wire_frame)
 {
-	loadTexturehandle(&texture_handle);
-	loadNormalhandle(&normal_handle);
+	load_texture_handle(&texture_handle);
+	load_normal_handle(&normal_handle);
 
 	glActiveTexture(GL_TEXTURE0 + tex);
 	glBindTexture(GL_TEXTURE_2D, tex);
@@ -603,15 +661,14 @@ void Composite_Obj::add(Obj e)
 }
 
 
-
+// random functions
 void			reset_rocket()
 {
 	rocket.p.pos = glm::vec3(0.0f, 0.0f, 2.0f);
 }
-
 void			reset_model()
 {
-	model.p.pos = vec3(0.0f, 0.0f, 1.5f);
+	model.p.pos = vec3(1.0f, 0.0f, 1.5f);
 }
 
 
@@ -719,7 +776,7 @@ GLuint			LoadShaders(const char * vertex_file_path, const char * fragment_file_p
 }
 
 
-
+// setup my Var_Handles that are handles to shader variables
 void			setup_program_handles(GLuint prog)
 {
 	eye_dir_handle = Var_Handle("u_eye_pos", &eye_position);
@@ -774,31 +831,44 @@ void			loop()
 	case SCREEN_E:
 		tex_sphere.draw(0);
 		model.draw(0);
+		bunny.draw(0);
 		break;
 	}
 }
 //Initilise custom objects
 void			init_objects()
 {
-	// make the screen E model
+	// import a ship for screen E
 	model = Obj(
-		"objects/XL5-BASE.obj", //model file
-		"199.bmp",				//texture file
-		"199_norm.bmp",			//normal map file
-		WHITE,
-		Particle(glm::vec3(0.1f, 0, 1.5f), glm::vec3()),
-		glm::vec3(1, 0, 0),
-		glm::radians(0.0f),
-		glm::vec3(1, 1, 1) * 0.0001f
+		"objects/XL5-BASE.obj",                             //model file
+		"199.bmp",				                            //texture file
+		"199_norm.bmp",			                            //normal map file
+		BLACK,					                            //vertex color to be used
+		Particle(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3()), //particle physics properties
+		glm::vec3(0, 1, 0),                                 //rotation axis
+		glm::radians(90.0f),                                //rotation amount
+		glm::vec3(1, 1, 1) * 0.02f                          //scale vector
 	);
 
-	// create sphere for screen A, B and D
+	// import a bunny for screen E
+	bunny = Obj(
+		"objects/bunny.obj", 
+		"rock.bmp",			
+		"rock_norm.bmp",			
+		BLACK,
+		Particle(glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3()),
+		glm::vec3(0, 1, 0),
+		glm::radians(90.0f),
+		glm::vec3(1, 1, 1)
+	);
+
+	// create sphere data for screen A, B and D
 	std::vector<vec3> v = generate_sphere(300,300);
-	std::vector<Vertex> o = pack_object(&v, GEN_ALL | GEN_COLOR, GREY);
+	std::vector<Vertex> o = pack_object(&v, GEN_ALL | GEN_COLOR | GEN_UVS_SPHERE, GREY);
 
 	// make sphere A
 	a_sphere = Obj("", "",
-		o,
+		o,													//object data
 		Particle(glm::vec3(), glm::vec3()),
 		glm::vec3(1, 0,0),
 		glm::radians(90.0f),
@@ -814,7 +884,7 @@ void			init_objects()
 		glm::vec3(1, 1, 1)
 	);
 	
-	// make sphere D
+	// make sphere D (this on has a texture!)
 	tex_sphere = Obj(
 		"197.bmp",				//texture file
 		"197_norm.bmp",			//normal map file
@@ -824,7 +894,7 @@ void			init_objects()
 		glm::radians(90.0f),
 		glm::vec3(1, 1, 1));
 
-	//ground
+	// another sphere for screen C
 	planet = Obj("", "",
 		o,
 		Particle(glm::vec3(0, 0, 0), glm::vec3()),
@@ -834,7 +904,7 @@ void			init_objects()
 	);
 
 	
-	// make rocket from composite Objs
+	// make rocket from composite obj for screen C
 	rocket.rotation = vec3(0.0f, 0.0f, 1.0f);
 	rocket.theta = glm::radians(90.0f);
 	rocket.scale *= 0.1f;
@@ -912,7 +982,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 		case GLFW_KEY_C:
 			screen_number = SCREEN_C;
 			current_program = program_c;
-			eye_position = vec3(0, 0, 5);
+			eye_position = vec3(0, 2, 5);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
 			lights.brightness = 100;
@@ -931,11 +1001,11 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
 			current_program = program_e;
-			eye_position = vec3(0, 0, 2);
-			eye_direction = vec3(1, 0, 0);
-			lights.pos = glm::vec3(0,0,10);
+			eye_position = vec3(0, 0, 5);
+			eye_direction = vec3(0, 0, 0);
+			lights.pos = glm::vec3(5, 2, 10);
 			lights.brightness = 100;
-			reset_model();
+			//reset_model();
 			setup_program_handles(current_program);
 			break;
 
@@ -1021,14 +1091,17 @@ int				initWindow()
 		return -1;
 	}
 
+	// load the shader programs
 	program_id = LoadShaders(vertex_shader, fragment_shader);
 	program_a = LoadShaders(vertex_shader_a, fragment_shader_a);
 	program_b = LoadShaders(vertex_shader_b, fragment_shader_b);
 	program_c = LoadShaders(vertex_shader_c, fragment_shader_c);
 	program_d = LoadShaders(vertex_shader_d, fragment_shader_d);
 	program_e = LoadShaders(vertex_shader_e, fragment_shader_e);
+	// set the current program
 	current_program = program_a;
 
+	// setup variable handles
 	setup_program_handles(current_program);
 
 	// Enable depth test
@@ -1037,9 +1110,10 @@ int				initWindow()
 	glDepthFunc(GL_LESS);
 	// Cull triangles which normal is not towards the camera
 	glEnable(GL_CULL_FACE);
-
+	// enable texturing
 	glEnable(GL_TEXTURE_2D);
 
+	// init objects
 	init_objects();
 
 }
@@ -1049,44 +1123,44 @@ void			glLoop(void(*graphics_loop)())
 	//Main Loop  
 	do
 	{
-		glUseProgram(current_program);
-
+		// start clock for this tick
 		auto start = std::chrono::high_resolution_clock::now();
 
+		// set current shader program
+		glUseProgram(current_program);
+
+		// calculate some useful vectors
 		direction = -glm::normalize(eye_position);
 		right = glm::normalize(glm::cross(direction, up));
 
+		// calculate projection and view matrix
 		Projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.001f, 1000.0f);
 		View = glm::lookAt(eye_position, eye_direction, up);
 
 		//Clear color buffer  
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// set clear color
 		glm::vec3 back_color = ambient_color * 1.0f;
 		glClearColor(back_color.x, back_color.y, back_color.z,1.);
 
+		// call the graphics loop
 		graphics_loop();
-
-		// check OpenGL error
-		//GLenum err;
-		//while ((err = glGetError()) != GL_NO_ERROR) {
-		//	std::cerr << "OpenGL error: " << err << std::endl;
-		//}
-
 
 		//Swap buffers  
 		glfwSwapBuffers(window);
 		//Get and organize events, like keyboard and mouse input, window resizing, etc...  
 		glfwPollEvents();
 
-
+		// stop clock
 		auto finish = std::chrono::high_resolution_clock::now();
 		int ms = float(std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count());
 		long newWait = 5 - ms;// -(gm.gameSpeed);
 		newWait = newWait < 0 ? 0 : newWait;
+		// throttle the graphics loop to cap at a certain fps
 		std::this_thread::sleep_for(std::chrono::milliseconds(newWait));
 
-	} //Check if the ESC key had been pressed or if the window had been closed  
+	} //Check if the ESC or Q key had been pressed or if the window had been closed  
 	while (!glfwWindowShouldClose(window));
 
 	//Close OpenGL window and terminate GLFW  

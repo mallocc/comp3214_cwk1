@@ -14,6 +14,8 @@ uniform mat4 u_p;
 // outs
 out vec3 o_color;
 
+
+
 void main()
 {
 // color of vertex

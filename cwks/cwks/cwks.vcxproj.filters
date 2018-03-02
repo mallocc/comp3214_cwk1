@@ -132,5 +132,8 @@
     <Object Include="objects\Scifi_downtown_city.obj">
       <Filter>Resource Files\Objects</Filter>
     </Object>
+    <Object Include="objects\bunny.obj">
+      <Filter>Resource Files\Objects</Filter>
+    </Object>
   </ItemGroup>
 </Project>
