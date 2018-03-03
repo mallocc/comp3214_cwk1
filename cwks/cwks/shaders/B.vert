@@ -17,8 +17,6 @@ uniform vec3 u_eye_pos;
 
 // outs
 out vec3 o_color;
-out vec3 o_to_light;
-out vec3 o_to_eye;
 out vec3 o_norm;
 
 
@@ -31,12 +29,6 @@ void main()
 // normal in world space
 	vec4 new_norm  = u_m * vec4(i_norm,1);
 	o_norm         = new_norm.xyz;
-
-// direction to eye
-	o_to_eye       = u_eye_pos - world_pos.xyz;	
-
-// direction to light
-	o_to_light     = u_light_pos - world_pos.xyz;	
 
 // color of vertex
 	o_color        = i_color;

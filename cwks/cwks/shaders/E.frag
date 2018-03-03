@@ -30,7 +30,6 @@ uniform sampler2D u_norm;
 
 // hemisphereical lighting vars
 vec3 up = vec3(0.0f,1.0f,0.0f);
-vec3 sky_color = vec3(0.2f,0.2f,0.3f);
 
 
 
@@ -53,6 +52,7 @@ void main()
 		B,
 		N
 	);
+
 // work out the normal from the normal map in world space
 	vec3 converted_normal_map = texture2D(u_norm,o_uv).rgb * 2.0f - 1.0f;
 	converted_normal_map = normalize(converted_normal_map);
@@ -60,13 +60,18 @@ void main()
 	worldspace_normal_map = normalize(worldspace_normal_map);
 
 // add the normal map to the face normal
-	vec3 new_normal = N + worldspace_normal_map;
+	vec3 new_normal = N + worldspace_normal_map * 10.0f;
 	new_normal = normalize(new_normal);
 
 	N = new_normal;
 
+// hemisphereical lighting
+	float NdotL	= dot(N, up);
+	float light_influence = NdotL * 0.5 + 0.5;
+	vec3 hemi_color = mix(u_ambient_color / 10.0f, u_ambient_color, light_influence);
+
 // calculate ambient effects
-	vec3 amb = u_ambient_color;
+	vec3 amb = hemi_color;
 
 // calculate diffuse effects
 	vec3 dif = u_diffuse_color * clamp(dot(N, L), 0, 1) * u_brightness / r2;
@@ -83,13 +88,8 @@ void main()
 	}
 	float spe = u_specular_scale * specular_term;
 
-// hemisphereical lighting
-	float NdotL	= dot(N, up);
-	float light_influence = NdotL * 0.5 + 0.5;
-	vec3 hemi_color = mix(u_ambient_color, sky_color, light_influence);
-
 // calculate final phong color
-	vec3 final_color = (texture2D(u_tex,o_uv).rgb + o_color) * (hemi_color + amb + dif) + spe;
+	vec3 final_color = texture2D(u_tex,o_uv).rgb * (amb + dif + spe);
 
 // apply fragment color
 	gl_FragColor = vec4(final_color,1);

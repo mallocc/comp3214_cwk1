@@ -31,12 +31,13 @@ using namespace glm;
 int screen_number = SCREEN_A;
 
 //colours
-glm::vec3 
-	WHITE(1, 1, 1), 
-	BLACK(0,0,0), 
-	GREY(.5,.5,.5), 
-	OFF_BLACK(.1, .1, .1),
-	RED(1,0,0),
+glm::vec3
+	WHITE                       (1, 1, 1),
+	BLACK                       (0, 0, 0),
+	GREY                        (.5, .5, .5),
+	OFF_BLACK                   (.1, .1, .1),
+	RED                         (1, 0, 0),
+	SKY_BLUE					(0.0f, 0.6f, 0.8f),
 	ambient_color = BLACK;
 
 //Window object  
@@ -61,18 +62,18 @@ Var_Handle
 
 //Shader paths
 const char
-	*vertex_shader     = "shaders/tut.vert",
-	*fragment_shader   = "shaders/tut.frag",
-	*vertex_shader_a   = "shaders/A.vert",
-	*fragment_shader_a = "shaders/A.frag",
-	*vertex_shader_b   = "shaders/B.vert",
-	*fragment_shader_b = "shaders/B.frag",
-	*vertex_shader_c   = "shaders/A.vert",
-	*fragment_shader_c = "shaders/A.frag",
-	*vertex_shader_d   = "shaders/D.vert",
-	*fragment_shader_d = "shaders/D.frag",
-	*vertex_shader_e   = "shaders/E.vert",
-	*fragment_shader_e = "shaders/E.frag";
+	*vertex_shader              = "shaders/tut.vert",
+	*fragment_shader            = "shaders/tut.frag",
+	*vertex_shader_a            = "shaders/A.vert",
+	*fragment_shader_a          = "shaders/A.frag",
+	*vertex_shader_b            = "shaders/B.vert",
+	*fragment_shader_b          = "shaders/B.frag",
+	*vertex_shader_c            = "shaders/C.vert",
+	*fragment_shader_c          = "shaders/C.frag",
+	*vertex_shader_d            = "shaders/D.vert",
+	*fragment_shader_d          = "shaders/D.frag",
+	*vertex_shader_e            = "shaders/E.vert",
+	*fragment_shader_e          = "shaders/E.frag";
 
 //proj and view matrix
 glm::mat4 
@@ -112,7 +113,7 @@ bool
 int test1                       = 0;
 
 // light object
-Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),200,0.5,200};
+Light lights = { glm::vec3(0,0,10),glm::vec3(1,1,1),200,0.8,100};
 
 
 
@@ -343,29 +344,17 @@ std::vector<glm::vec2>			generate_polar_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<vec2> uv;
 	for (int i = 0; i < v.size(); i++)
-		uv.push_back(cart_polar((v[i])));
+		uv.push_back(cart_polar(v[i]));
 	return uv;
 }
-std::vector<glm::vec2>			generate_sphereical_uvs(int lats, int longs)
+std::vector<glm::vec2>			generate_sphereical_uvs(std::vector<glm::vec3> v)
 {
-	std::vector<glm::vec2> v;
-	float step_lats = glm::radians(360.0f) / float(lats);
-	float step_longs = glm::radians(360.0f) / float(longs);
-	float Radius = 1., x, y, z;
-	for (float a = 0; a <= glm::radians(360.0f); a += step_lats)
-		for (float b = 0; b <= glm::radians(360.0f); b += step_longs)
-		{
-			float x = a / (glm::pi<float>()), y = b / (glm::pi<float>());
-			float step_x = step_lats / (glm::pi<float>()), step_y = step_longs / (glm::pi<float>());
-			v.push_back(glm::vec2(x, y));
-			v.push_back(glm::vec2(x + step_x, y));
-			v.push_back(glm::vec2(x + step_x, y + step_y));
-			v.push_back(glm::vec2(x + step_x, y + step_y));
-			v.push_back(glm::vec2(x, y + step_y));
-			v.push_back(glm::vec2(x, y));
-
-		}
-	return v;
+	std::vector<vec2> uv;
+	for (int i = 0; i < v.size(); i++)
+	{
+		uv.push_back(vec2((atan(v[i].y, v[i].x) / 3.1415926 + 1.0) * 0.5, (asin(v[i].z) / 3.1415926 + 0.5)));
+	}
+	return uv;
 }
 std::vector<glm::vec2>			generate_repeated_rect_uvs(std::vector<glm::vec3> v)
 {
@@ -429,10 +418,10 @@ std::vector<Vertex>				pack_object(std::vector<glm::vec3> * v, unsigned int flag
 		c = random_intesity_colour_buffer(color, v->size());
 	if ((flags & GEN_UVS_POLAR) == GEN_UVS_POLAR)
 		uv = generate_polar_uvs(*v);
-	if ((flags & GEN_UVS_SPHERE) == GEN_UVS_SPHERE)
-		uv = generate_sphereical_uvs(300,300);
 	if ((flags & GEN_UVS_RECTS) == GEN_UVS_RECTS)
 		uv = generate_repeated_rect_uvs(*v);
+	if ((flags & GEN_UVS_SPHERE) == GEN_UVS_SPHERE)
+		uv = generate_sphereical_uvs(*v);
 	if ((flags & GEN_TANGS) == GEN_TANGS)
 		t = generate_tangents(*v);
 
@@ -661,6 +650,7 @@ void Composite_Obj::add(Obj e)
 }
 
 
+
 // random functions
 void			reset_rocket()
 {
@@ -816,22 +806,24 @@ void			loop()
 	{
 	case SCREEN_A:
 		a_sphere.draw(1);
+		a_sphere.theta += dt;
 		break;
 	case SCREEN_B:
 		b_sphere.draw(0);
 		break;
 	case SCREEN_C:
-		rocket.p.pos = glm::quat(glm::vec3(0, dt, 0)) * rocket.p.pos;
+		rocket.p.pos = glm::quat(glm::vec3(0, -dt, 0)) * rocket.p.pos;
 		rocket.draw(wire_frame);
 		planet.draw(wire_frame);
 		break;
 	case SCREEN_D:
-		tex_sphere.draw(0);
+		planet.draw(0);
 		break;
 	case SCREEN_E:
+		bunny.draw(0);
 		tex_sphere.draw(0);
 		model.draw(0);
-		bunny.draw(0);
+		
 		break;
 	}
 }
@@ -844,17 +836,17 @@ void			init_objects()
 		"199.bmp",				                            //texture file
 		"199_norm.bmp",			                            //normal map file
 		BLACK,					                            //vertex color to be used
-		Particle(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3()), //particle physics properties
-		glm::vec3(0, 1, 0),                                 //rotation axis
+		Particle(glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3()), //particle physics properties
+		glm::vec3(1, 0, 0),                                 //rotation axis
 		glm::radians(90.0f),                                //rotation amount
-		glm::vec3(1, 1, 1) * 0.02f                          //scale vector
+		glm::vec3(1, 1, 1) * 0.1f                          //scale vector
 	);
 
 	// import a bunny for screen E
 	bunny = Obj(
 		"objects/bunny.obj", 
-		"rock.bmp",			
-		"rock_norm.bmp",			
+		"197.bmp",				                            //texture file
+		"197_norm.bmp",
 		BLACK,
 		Particle(glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3()),
 		glm::vec3(0, 1, 0),
@@ -863,7 +855,7 @@ void			init_objects()
 	);
 
 	// create sphere data for screen A, B and D
-	std::vector<vec3> v = generate_sphere(300,300);
+	std::vector<vec3> v = generate_sphere(200,200);
 	std::vector<Vertex> o = pack_object(&v, GEN_ALL | GEN_COLOR | GEN_UVS_SPHERE, GREY);
 
 	// make sphere A
@@ -886,8 +878,8 @@ void			init_objects()
 	
 	// make sphere D (this on has a texture!)
 	tex_sphere = Obj(
-		"197.bmp",				//texture file
-		"197_norm.bmp",			//normal map file
+		"172.bmp",				                            //texture file
+		"172_norm.bmp",			                            //normal map file
 		o,
 		Particle(glm::vec3(), glm::vec3()),
 		glm::vec3(1, 0, 0),
@@ -895,9 +887,11 @@ void			init_objects()
 		glm::vec3(1, 1, 1));
 
 	// another sphere for screen C
-	planet = Obj("", "",
+	planet = Obj(
+		"5672_mars_4k_color.jpg",				//texture file
+		"5672_mars_4k_normal.jpg",			//normal map file
 		o,
-		Particle(glm::vec3(0, 0, 0), glm::vec3()),
+		Particle(glm::vec3(0.0f, 0, 0), glm::vec3()),
 		glm::vec3(1, 0, 0),
 		glm::radians(90.0f),
 		glm::vec3(1, 1, 1)
@@ -969,6 +963,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			lights.pos = glm::vec3(0, 0, 10);
 			lights.brightness = 100;
 			setup_program_handles(current_program);
+			ambient_color = BLACK;
 			break;
 		case GLFW_KEY_B:
 			screen_number = SCREEN_B;
@@ -978,6 +973,8 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			lights.pos = glm::vec3(0, 0, 10);
 			lights.brightness = 100;
 			setup_program_handles(current_program);
+			spin = 0;
+			ambient_color = BLACK;
 			break;
 		case GLFW_KEY_C:
 			screen_number = SCREEN_C;
@@ -988,15 +985,19 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			lights.brightness = 100;
 			setup_program_handles(current_program);
 			reset_rocket();
+			spin = 0;
+			ambient_color = OFF_BLACK;
 			break;
 		case GLFW_KEY_D:
 			screen_number = SCREEN_D;
 			current_program = program_d;
-			eye_position = vec3(0, 0, 5);
+			eye_position = vec3(0, 0, 3);
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(0, 0, 10);
 			lights.brightness = 100;
 			setup_program_handles(current_program);
+			spin = 1;
+			ambient_color = BLACK;
 			break;
 		case GLFW_KEY_E:
 			screen_number = SCREEN_E;
@@ -1005,8 +1006,9 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 			eye_direction = vec3(0, 0, 0);
 			lights.pos = glm::vec3(5, 2, 10);
 			lights.brightness = 100;
-			//reset_model();
+			spin = 1;
 			setup_program_handles(current_program);
+			ambient_color = SKY_BLUE / 3.0f;
 			break;
 
 			//other

@@ -29,7 +29,7 @@ void main()
 {	
 // get distance to the light
 	float r = length(o_to_light);
-	float r2 = r*r;
+	float r2 = r*r; 
 
 // work out after interpolation
 	vec3 L = normalize(o_to_light);
@@ -55,7 +55,7 @@ void main()
 	float spe = u_specular_scale * specular_term;
 
 // calculate final phong color
-	vec3 final_color = o_color * (amb + dif) + spe;
+	vec3 final_color = o_color * (amb + dif + spe);
 
 // apply fragment color
 	gl_FragColor = vec4(final_color,1);
